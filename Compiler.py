@@ -62,6 +62,8 @@ class Compiler:
 
             case NodeType.InfixExpression:
                 self.__visit_infix_expression(node)
+            case NodeType.CallExpression:
+                self.__visit_call_expression(node)
 
     
     # region Visit Methods
@@ -106,10 +108,10 @@ class Compiler:
     def __visit_function_statement(self, node: FunctionStatement) -> None:
         name: str = node.name.value
         body: BlockStatement = node.body
-        params: list[IdentifierLiteral] = node.parameters
+        params: list[FunctionParameter] = node.parameters
 
-        param_names: list[str] = [p.value for p in params]
-        param_types: list[ir.Type] = [] # TODO
+        param_names: list[str] = [p.name for p in params]
+        param_types: list[ir.Type] = [self.type_map[p.value_type] for p in params]
 
         return_type: ir.Type = self.type_map[node.return_type]
 
@@ -121,12 +123,27 @@ class Compiler:
         previous_builder = self.builder
         self.builder = ir.IRBuilder(block)
 
+        # Storing pointers for each parameter
+        params_ptr = []
+        for i, typ in enumerate(param_types):
+            ptr = self.builder.alloca(typ)
+            self.builder.store(func.args[i], ptr)
+            params_ptr.append(ptr)
+
+        # Adding the parameters to the env
         previous_env = self.env
         self.env = Environment(parent = self.env)
+        for i, x in enumerate(zip(param_types, param_names)):
+            typ = param_types[i]
+            ptr = params_ptr[i]
+
+            self.env.define(x[1], ptr, typ)
+
         self.env.define(name, func, return_type)
 
         self.compile(body)
 
+        # Set everything back to normal after it's compiled
         self.env = previous_env
         self.env.define(name, func, return_type)
 
@@ -160,7 +177,6 @@ class Compiler:
                     self.compile(consequence)
                 with otherwise:
                     self.compile(alternative)
-                
     # endregion
 
     # region Expressions
@@ -200,6 +216,9 @@ class Compiler:
                 case '==':
                     value = self.builder.icmp_signed('==', left_value, right_value)
                     Type = ir.IntType(1)
+                case '!=':
+                    value = self.builder.icmp_signed('!=', left_value, right_value)
+                    Type = ir.IntType(1)
         elif isinstance(right_type, ir.FloatType) and isinstance(left_type, ir.FloatType):
             Type = ir.FloatType()
 
@@ -229,8 +248,31 @@ class Compiler:
                 case '==':
                     value = self.builder.fcmp_signed('==', left_value, right_value)
                     Type = ir.IntType(1)
+                case '!=':
+                    value = self.builder.fcmp_signed('!=', left_value, right_value)
+                    Type = ir.IntType(1)
         
         return value, Type
+    
+    def __visit_call_expression(self, node: CallExpression) -> tuple[ir.Instruction, ir.Type]:
+        name: str = node.function.value
+        params: list[Expression] = node.arguments
+
+        args = []
+        types = []
+        if len(params) > 0:
+            for x in params:
+                p_val, p_type = self.__resolve_value(x)
+                args.append(p_val)
+                types.append(p_type)
+
+        match name:
+            case _:
+                func, ret_type = self.env.lookup(name)
+                ret = self.builder.call(func, args)
+        
+        return ret, ret_type
+
     # endregion
 
     # endregion
@@ -247,7 +289,7 @@ class Compiler:
                 value, Type = node.value, self.type_map['float'] # value type checking here
                 return ir.Constant(Type, value), Type
             case NodeType.IdentifierLiteral:
-                node: FloatLiteral = node
+                node: IdentifierLiteral = node
                 ptr, Type = self.env.lookup(node.value)
                 return self.builder.load(ptr), Type
             case NodeType.BooleanLiteral:
@@ -257,4 +299,6 @@ class Compiler:
             # Expression Values
             case NodeType.InfixExpression:
                 return self.__visit_infix_expression(node)
+            case NodeType.CallExpression:
+                return self.__visit_call_expression(node)
     # endregion

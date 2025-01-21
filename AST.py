@@ -15,12 +15,16 @@ class NodeType(Enum):
 
     # Expressions
     InfixExpression = 'InfixExpression'
+    CallExpression = 'CallExpression'
 
     # Literals
     IntegerLiteral = 'IntegerLiteral'
     FloatLiteral = 'FloatLiteral'
     IdentifierLiteral = 'IdentifierLiteral'
     BooleanLiteral = 'BooleanLiteral'
+
+    # Helper
+    FunctionParameter = 'FunctionParameter'
 
 class Node(ABC):
     @abstractmethod
@@ -49,6 +53,23 @@ class Program(Node):
             'type': self.type().value,
             'statements': [{stmt.type().value: stmt.json()} for stmt in self.statements]
         }
+
+# region Helpers
+class FunctionParameter(Expression):
+    def __init__(self, name: str, value: str = None) -> None:
+        self.name = name
+        self.value = value
+
+    def type(self) -> NodeType:
+        return NodeType.FunctionParameter
+
+    def json(self) -> dict:
+        return {
+            'type': self.type().value,
+            'name': self.name,
+            'value_type': self.value_type,
+        }
+# endregion
 
 # region Statements
 class ExpressionStatement(Statement):
@@ -108,7 +129,7 @@ class ReturnStatement(Statement):
         }
 
 class FunctionStatement(Statement):
-    def __init__(self, parameters: list = [], body: BlockStatement = None, name = None, return_type: str = None) -> None:
+    def __init__(self, parameters: list[FunctionParameter] = [], body: BlockStatement = None, name = None, return_type: str = None) -> None:
         self.parameters = parameters
         self.body = body
         self.name = name
@@ -176,6 +197,22 @@ class InfixExpression(Expression):
             'operator': self.operator,
             'right_node': self.right_node.json(),
         }
+
+class CallExpression(Expression):
+    def __init__(self, function: Expression = None, arguments: list[Expression] = None) -> None:
+        self.function = function
+        self.arguments = arguments
+
+    def type(self) -> NodeType:
+        return NodeType.CallExpression
+
+    def json(self) -> dict:
+        return {
+            'type': self.type().value,
+            'function': self.function.json(),
+            'arguments': [arg.json() for arg in self.arguments],
+        }
+
 # endregion
 
 # region Literals

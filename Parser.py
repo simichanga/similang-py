@@ -18,7 +18,7 @@ class PrecedenceType(Enum):
     P_INDEX = auto()
 
 # Predecence Mapping
-PREDEDENCES : dict[TokenType, PrecedenceType] = {
+PRECEDENCES : dict[TokenType, PrecedenceType] = {
     TokenType.PLUS: PrecedenceType.P_SUM,
     TokenType.MINUS: PrecedenceType.P_SUM,
     TokenType.SLASH: PrecedenceType.P_PRODUCT,
@@ -32,6 +32,8 @@ PREDEDENCES : dict[TokenType, PrecedenceType] = {
     TokenType.GT: PrecedenceType.P_LESSGREATER,
     TokenType.LT_EQ: PrecedenceType.P_LESSGREATER,
     TokenType.GT_EQ: PrecedenceType.P_LESSGREATER,
+
+    TokenType.LPAREN: PrecedenceType.P_CALL,
 }
 
 class Parser:
@@ -52,7 +54,7 @@ class Parser:
             TokenType.TRUE: self.__parse_boolean,
             TokenType.FALSE: self.__parse_boolean,
         }
-        self.infix_parse_fns: dict[TokenType, Callable] = { tt: self.__parse_infix_expression for tt in (TokenType) }
+        self.infix_parse_fns: dict[TokenType, Callable] = { tt: self.__parse_infix_expression if tt != TokenType.LPAREN else self.__parse_call_expression for tt in (TokenType) } # TODO ill regret this later on
 
         self.__next_token()
         self.__next_token()
@@ -77,13 +79,13 @@ class Parser:
             return False
 
     def __current_precedence(self) -> PrecedenceType:
-        prec: int | None = PREDEDENCES.get(self.current_token.type)
+        prec: int | None = PRECEDENCES.get(self.current_token.type)
         if prec is None:
             return PrecedenceType.P_LOWEST
         return prec
 
     def __peek_precedence(self) -> PrecedenceType:
-        prec: int | None = PREDEDENCES.get(self.peek_token.type)
+        prec: int | None = PRECEDENCES.get(self.peek_token.type)
         if prec is None:
             return PrecedenceType.P_LOWEST
         return prec
@@ -175,9 +177,7 @@ class Parser:
         if not self.__expect_peek(TokenType.LPAREN):
             return None
         
-        stmt.parameters = [] # TODO parse function parameters
-        if not self.__expect_peek(TokenType.RPAREN):
-            return None
+        stmt.parameters = self.__parse_function_parameters()
 
         if not self.__expect_peek(TokenType.ARROW):
             return None
@@ -193,6 +193,47 @@ class Parser:
         stmt.body = self.__parse_block_statement()
 
         return stmt
+
+    def __parse_function_parameters(self) -> list[FunctionParameter]:
+        params: list[FunctionParameter] = []
+
+        if self.__peek_token_is(TokenType.RPAREN):
+            self.__next_token()
+            return params
+        
+        self.__next_token()
+
+        # TODO refactor this retarded code
+        # read first param
+        first_param: FunctionParameter = FunctionParameter(name = self.current_token.literal)
+
+        if not self.__expect_peek(TokenType.COLON):
+            return None
+
+        self.__next_token()
+
+        first_param.value_type = self.current_token.literal
+        params.append(first_param)
+
+        while self.__peek_token_is(TokenType.COMMA):
+            self.__next_token()
+            self.__next_token()
+
+            # read from the second param onwards
+            param: FunctionParameter = FunctionParameter(name = self.current_token.literal)
+
+            if not self.__expect_peek(TokenType.COLON):
+                return None
+
+            self.__next_token()
+
+            param.value_type = self.current_token.literal
+            params.append(param)
+        
+        if not self.__expect_peek(TokenType.RPAREN):
+            return None
+
+        return params 
 
     def __parse_return_statement(self) -> ReturnStatement:
         stmt: ReturnStatement = ReturnStatement()
@@ -298,6 +339,34 @@ class Parser:
             return None
 
         return expr
+    
+    def __parse_call_expression(self, function: Expression) -> CallExpression:
+        expr: CallExpression = CallExpression(function = function)
+        expr.arguments = self.__parse_expression_list(TokenType.RPAREN)
+
+        return expr
+
+    def __parse_expression_list(self, end: TokenType) -> list[Expression]:
+        e_list: list[Expression] = []
+
+        if self.__peek_token_is(end):
+            self.__next_token()
+            return e_list
+        
+        self.__next_token()
+
+        e_list.append(self.__parse_expression(PrecedenceType.P_LOWEST))
+
+        while self.__peek_token_is(TokenType.COMMA):
+            self.__next_token()
+            self.__next_token()
+
+            e_list.append(self.__parse_expression(PrecedenceType.P_LOWEST))
+        
+        if not self.__expect_peek(end):
+            return None
+
+        return e_list
     # endregion
 
     # region Prefix Methods
