@@ -10,6 +10,8 @@ class NodeType(Enum):
     FunctionStatement = 'FunctionStatement'
     BlockStatement = 'BlockStatement'
     ReturnStatement = 'ReturnStatement'
+    AssignStatement = 'AssignStatement'
+    IfStatement = 'IfStatement'
 
     # Expressions
     InfixExpression = 'InfixExpression'
@@ -18,6 +20,7 @@ class NodeType(Enum):
     IntegerLiteral = 'IntegerLiteral'
     FloatLiteral = 'FloatLiteral'
     IdentifierLiteral = 'IdentifierLiteral'
+    BooleanLiteral = 'BooleanLiteral'
 
 class Node(ABC):
     @abstractmethod
@@ -122,6 +125,38 @@ class FunctionStatement(Statement):
             'parameters': [p.json() for p in self.parameters],
             'body': self.body.json(),
         }
+
+class AssignStatement(Statement):
+    def __init__(self, ident: Expression = None, right_value: Expression = None) -> None:
+        self.ident = ident
+        self.right_value = right_value
+    
+    def type(self) -> NodeType:
+        return NodeType.AssignStatement
+
+    def json(self) -> dict:
+        return {
+            'type': self.type().value,
+            'ident': self.ident.json(),
+            'right_value': self.right_value.json(),
+        }
+
+class IfStatement(Statement):
+    def __init__(self, condition: Expression = None, consequence: BlockStatement = None, alternative: BlockStatement = None) -> None:
+        self.condition = condition
+        self.consequence = consequence
+        self.alternative = alternative
+
+    def type(self) -> NodeType:
+        return NodeType.IfStatement
+
+    def json(self) -> dict:
+        return {
+            'type': self.type().value,
+            'condition': self.condition.json(),
+            'consequence': self.consequence.json(),
+            'alternative': self.alternative.json() if self.alternative is not None else None
+        }
 # endregion
 
 # region Expressions
@@ -176,6 +211,19 @@ class IdentifierLiteral(Expression):
     
     def type(self) -> NodeType:
         return NodeType.IdentifierLiteral
+
+    def json(self) -> dict:
+        return {
+            'type': self.type().value,
+            'value': self.value,
+        }
+
+class BooleanLiteral(Expression):
+    def __init__(self, value: bool = None) -> None:
+        self.value: bool = value
+    
+    def type(self) -> NodeType:
+        return NodeType.BooleanLiteral
 
     def json(self) -> dict:
         return {

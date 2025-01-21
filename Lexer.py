@@ -81,45 +81,82 @@ class Lexer:
 
         self.__skip_whitespace()
 
-        OPCODE_TABLE = {
-            '+': (TokenType.PLUS, self.current_char),
-            '-': (TokenType.MINUS, self.current_char),
-            '*': (TokenType.ASTERISK, self.current_char),
-            '/': (TokenType.SLASH, self.current_char),
-            '^': (TokenType.POW, self.current_char),
-            '%': (TokenType.MODULUS, self.current_char),
-            '=': (TokenType.EQ, self.current_char),
-            ':': (TokenType.COLON, self.current_char),
-            '(': (TokenType.LPAREN, self.current_char),
-            ')': (TokenType.RPAREN, self.current_char),
-            '{': (TokenType.LBRACE, self.current_char),
-            '}': (TokenType.RBRACE, self.current_char),
-            ';': (TokenType.SEMICOLON, self.current_char),
-            None: (TokenType.EOF, ''),
-        }
-
-        params = OPCODE_TABLE.get(self.current_char)
-        
-        if params is not None:
-            # Check if is function arrow
-            if params[0] == TokenType.MINUS:
+        match self.current_char:
+            case '+':
+                tok = self.__new_token(TokenType.PLUS, self.current_char)
+            case '-':
                 if self.__peek_char() == '>':
                     ch = self.current_char
                     self.__read_char()
-                    params = TokenType.ARROW, ch + self.current_char
-
-            tok = self.__new_token(*params)
-        else:
-            if self.__is_letter(self.current_char):
-                literal: str = self.__read_identifier()
-                tt: TokenType = lookup_ident(literal)
-                tok = self.__new_token(tt = tt, literal = literal)
-                return tok
-            elif self.__is_digit(self.current_char):
-                tok = self.__read_number()
-                return tok
-            else:
-                tok = self.__new_token(TokenType.ILLEGAL, self.current_char)
+                    tok = self.__new_token(TokenType.ARROW, ch + self.current_char)
+                else:
+                    tok = self.__new_token(TokenType.MINUS, self.current_char)
+            case '*':
+                tok = self.__new_token(TokenType.ASTERISK, self.current_char)
+            case '/':
+                tok = self.__new_token(TokenType.SLASH, self.current_char)
+            case '^':
+                tok = self.__new_token(TokenType.POW, self.current_char)
+            case '%':
+                tok = self.__new_token(TokenType.MODULUS, self.current_char)
+            case '<':
+                # Handle <=
+                if self.__peek_char() == '=':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.LT_EQ, ch + self.current_char)
+                else:
+                    tok = self.__new_token(TokenType.LT, self.current_char)
+            case '>':
+                # Handle >=
+                if self.__peek_char() == '=':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.GT_EQ, ch + self.current_char)
+                else:
+                    tok = self.__new_token(TokenType.GT, self.current_char)
+            case '=':
+                # Handle ==
+                if self.__peek_char() == '=':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.EQ_EQ, ch + self.current_char)
+                else:
+                    tok = self.__new_token(TokenType.EQ, self.current_char)
+            case '!':
+                # Handle !=
+                if self.__peek_char() == '=':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.NOT_EQ, ch + self.current_char)
+                else:
+                    # TODO implement negation
+                    tok = self.__new_token(TokenType.ILLEGAL, self.current_char)
+            case ':':
+                tok = self.__new_token(TokenType.COLON, self.current_char)
+            case '(':
+                tok = self.__new_token(TokenType.LPAREN, self.current_char)
+            case ')':
+                tok = self.__new_token(TokenType.RPAREN, self.current_char)
+            case '{':
+                tok = self.__new_token(TokenType.LBRACE, self.current_char)
+            case '}':
+                tok = self.__new_token(TokenType.RBRACE, self.current_char)
+            case ';':
+                tok = self.__new_token(TokenType.SEMICOLON, self.current_char)
+            case None:
+                tok = self.__new_token (TokenType.EOF, '')
+            case _:
+                if self.__is_letter(self.current_char):
+                    literal: str = self.__read_identifier()
+                    tt: TokenType = lookup_ident(literal)
+                    tok = self.__new_token(tt = tt, literal = literal)
+                    return tok
+                elif self.__is_digit(self.current_char):
+                    tok = self.__read_number()
+                    return tok
+                else:
+                    tok = self.__new_token(TokenType.ILLEGAL, self.current_char)
 
         self.__read_char()
         return tok

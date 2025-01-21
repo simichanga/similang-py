@@ -1,5 +1,11 @@
 fn main() -> int {
-    let a: int = 4;
+    let a: int = 5;
 
-    return a * 2;
+    if a == 5 {
+        a = 69;
+    } else {
+        a = 420;
+    }
+
+    return a;
 }

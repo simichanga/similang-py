@@ -28,18 +28,15 @@ if __name__ == '__main__':
     if LEXER_DEBUG:
         print('===== LEXER DEBUG =====')
 
-        with open('tests/test.simi', 'r') as f:
-            code: str = f.read()
-
         debug_lex: Lexer = Lexer(source = code)
 
         while debug_lex.current_char is not None:
             print(debug_lex.next_token())
 
+    program: Program = p.parse_program()
+    
     if PARSER_DEBUG:
-        print('===== PARSER DEBUG =====')
-
-        program: Program = p.parse_program()
+        print('===== PARSER DEBUG =====')    
         
         PATH: str = 'debug/ast.json'
         with open(PATH, 'w') as f:

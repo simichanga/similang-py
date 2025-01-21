@@ -9,6 +9,7 @@ class Compiler:
         self.type_map: dict[str, ir.Type] = {
             'int': ir.IntType(32),
             'float': ir.FloatType(),
+            'bool': ir.IntType(1),
         }
 
         self.module: ir.Module = ir.Module('main')
@@ -16,6 +17,28 @@ class Compiler:
         self.builder: ir.IRBuilder = ir.IRBuilder()
 
         self.env: Environment = Environment()
+
+        self.errors: list[str] = []
+
+        self.__initialize_builtins()
+
+    def __initialize_builtins(self) -> None:
+        def __init__booleans() -> tuple[ir.GlobalVariable, ir.GlobalVariable]:
+            bool_type: ir.Type = self.type_map['bool']
+
+            true_var = ir.GlobalVariable(self.module, bool_type, 'true')
+            true_var.initializer = ir.Constant(bool_type, 1)
+            true_var.global_constant = True
+
+            false_var = ir.GlobalVariable(self.module, bool_type, 'false')
+            false_var.initializer = ir.Constant(bool_type, 0)
+            false_var.global_constant = True
+
+            return true_var, false_var
+
+        true_var, false_var = __init__booleans()
+        self.env.define('true', true_var, true_var.type)
+        self.env.define('false', false_var, false_var.type)
 
     def compile(self, node: Node) -> None:
         match node.type():
@@ -32,7 +55,10 @@ class Compiler:
                 self.__visit_block_statement(node)
             case NodeType.ReturnStatement:
                 self.__visit_return_statement(node)
-
+            case NodeType.AssignStatement:
+                self.__visit_assign_statement(node)
+            case NodeType.IfStatement:
+                self.__visit_if_statement(node)
 
             case NodeType.InfixExpression:
                 self.__visit_infix_expression(node)
@@ -105,7 +131,36 @@ class Compiler:
         self.env.define(name, func, return_type)
 
         self.builder = previous_builder
+    
+    def __visit_assign_statement(self, node: AssignStatement) -> None:
+        name: str = node.ident.value
+        value: Expression = node.right_value
 
+        value, Type = self.__resolve_value(value)
+
+        if self.env.lookup(name) is None:
+            self.errors.append(f'COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned') # TODO proper error throwing
+        else:
+            ptr, _ = self.env.lookup(name)
+            self.builder.store(value, ptr)
+
+    def __visit_if_statement(self, node: IfStatement) -> None:
+        condition = node.condition
+        consequence = node.consequence
+        alternative = node.alternative
+
+        test, _ = self.__resolve_value(condition)
+
+        if alternative is None:
+            with self.builder.if_then(test):
+                self.compile(consequence)
+        else:
+            with self.builder.if_else(test) as (true, otherwise):
+                with true:
+                    self.compile(consequence)
+                with otherwise:
+                    self.compile(alternative)
+                
     # endregion
 
     # region Expressions
@@ -118,25 +173,62 @@ class Compiler:
 
         if isinstance(right_type, ir.IntType) and isinstance(left_type, ir.IntType):
             Type = self.type_map['int']
-            OP_MAP: Final[dict[str, Callable]] = {
-                '+': self.builder.add,
-                '-': self.builder.sub,
-                '*': self.builder.mul,
-                '/': self.builder.sdiv,
-                '%': self.builder.srem,
-            }
-            value = OP_MAP[operator](left_value, right_value)
 
+            match operator:
+                case '+':
+                    value = self.builder.add(left_value, right_value)
+                case '-':
+                    value = self.builder.sub(left_value, right_value)
+                case '*':
+                    value = self.builder.mul(left_value, right_value)
+                case '/':
+                    value = self.builder.sdiv(left_value, right_value)
+                case '%':
+                    value = self.builder.srem(left_value, right_value)
+                case '<':
+                    value = self.builder.icmp_signed('<', left_value, right_value)
+                    Type = ir.IntType(1)
+                case '<=':
+                    value = self.builder.icmp_signed('<=', left_value, right_value)
+                    Type = ir.IntType(1)
+                case '>':
+                    value = self.builder.icmp_signed('>', left_value, right_value)
+                    Type = ir.IntType(1)
+                case '>=':
+                    value = self.builder.icmp_signed('>=', left_value, right_value)
+                    Type = ir.IntType(1)
+                case '==':
+                    value = self.builder.icmp_signed('==', left_value, right_value)
+                    Type = ir.IntType(1)
         elif isinstance(right_type, ir.FloatType) and isinstance(left_type, ir.FloatType):
             Type = ir.FloatType()
-            OP_MAP: Final[dict[str, Callable]] = {
-                '+': self.builder.fadd,
-                '-': self.builder.fsub,
-                '*': self.builder.fmul,
-                '/': self.builder.fdiv,
-                '%': self.builder.frem,
-            }
-            value = OP_MAP[operator](left_value, right_value)
+
+            match operator:
+                case '+':
+                    value = self.builder.fadd(left_value, right_value)
+                case '-':
+                    value = self.builder.fsub(left_value, right_value)
+                case '*':
+                    value = self.builder.fmul(left_value, right_value)
+                case '/':
+                    value = self.builder.fdiv(left_value, right_value)
+                case '%':
+                    value = self.builder.frem(left_value, right_value)
+                case '<':
+                    value = self.builder.fcmp_signed('<', left_value, right_value)
+                    Type = ir.IntType(1)
+                case '<=':
+                    value = self.builder.fcmp_signed('<=', left_value, right_value)
+                    Type = ir.IntType(1)
+                case '>':
+                    value = self.builder.fcmp_signed('>', left_value, right_value)
+                    Type = ir.IntType(1)
+                case '>=':
+                    value = self.builder.fcmp_signed('>=', left_value, right_value)
+                    Type = ir.IntType(1)
+                case '==':
+                    value = self.builder.fcmp_signed('==', left_value, right_value)
+                    Type = ir.IntType(1)
         
         return value, Type
     # endregion
@@ -158,9 +250,11 @@ class Compiler:
                 node: FloatLiteral = node
                 ptr, Type = self.env.lookup(node.value)
                 return self.builder.load(ptr), Type
+            case NodeType.BooleanLiteral:
+                node: BooleanLiteral = node
+                return ir.Constant(ir.IntType(1), 1 if node.value else 0), ir.IntType
 
             # Expression Values
             case NodeType.InfixExpression:
                 return self.__visit_infix_expression(node)
-
     # endregion
