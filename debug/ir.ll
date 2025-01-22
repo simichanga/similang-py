@@ -22,9 +22,9 @@ add_entry:
 define i32 @"main"()
 {
 main_entry:
-  %".2" = add i32 0, 2
-  %".3" = mul i32 1, 2
-  %".4" = sub i32 %".2", %".3"
+  %".2" = mul i32 2, 3
+  %".3" = add i32 1, %".2"
+  %".4" = sub i32 %".3", 7
   %".5" = alloca i32
   store i32 %".4", i32* %".5"
   %".7" = load i32, i32* %".5"

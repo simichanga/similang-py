@@ -81,6 +81,7 @@ class Lexer:
 
         self.__skip_whitespace()
 
+        # TODO one day I will hopefully refactor this abomination
         match self.current_char:
             case '+':
                 tok = self.__new_token(TokenType.PLUS, self.current_char)
