@@ -239,16 +239,14 @@ class Parser:
         return params 
 
     def __parse_return_statement(self) -> ReturnStatement:
-        stmt: ReturnStatement = ReturnStatement()
-
         self.__next_token()
 
-        stmt.return_value = self.__parse_expression(PrecedenceType.P_LOWEST)
+        return_value = self.__parse_expression(PrecedenceType.P_LOWEST)
 
         if not self.__expect_peek(TokenType.SEMICOLON):
             return None
         
-        return stmt
+        return ReturnStatement(return_value = return_value)
 
     def __parse_block_statement(self) -> BlockStatement:
         block_stmt: BlockStatement = BlockStatement()
@@ -265,18 +263,16 @@ class Parser:
         return block_stmt
 
     def __parse_assignment_statement(self) -> AssignStatement:
-        stmt: AssignStatement = AssignStatement()
-
-        stmt.ident = IdentifierLiteral(value = self.current_token.literal)
+        ident = IdentifierLiteral(value = self.current_token.literal)
 
         self.__next_token() # skips the IDENT
         self.__next_token() # skips the =
 
-        stmt.right_value = self.__parse_expression(PrecedenceType.P_LOWEST)
+        right_value = self.__parse_expression(PrecedenceType.P_LOWEST)
 
         self.__next_token()
 
-        return stmt
+        return AssignStatement(ident = ident, right_value = right_value)
 
     def __parse_if_statement(self) -> IfStatement:
         condition: Expression = None

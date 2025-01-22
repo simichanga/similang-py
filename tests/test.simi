@@ -1,9 +1,23 @@
+fn add(a: int, b: int) -> int {
+    return a + b;
+}
+
 fn main() -> int {
     let a: int = 0;
 
-    while a < 10 {
-        printf("a = %i\n", a);
-        a = a + 1;
+    a = 0;
+
+    if a == 0 {
+        while a < 10 {
+            printf("a = %i\n", a);
+            a = add(a, 1);
+        }
+    } else {
+        printf("prank\n");
+    }
+
+    while 1 == 0 {
+
     }
 
     return a;

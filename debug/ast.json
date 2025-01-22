@@ -2,102 +2,217 @@
     "type": "Program",
     "statements": [
         {
-            "FunctionStatement": {
-                "type": "FunctionStatement",
-                "name": {
-                    "type": "IdentifierLiteral",
-                    "value": "foo"
+            "type": "FunctionStatement",
+            "name": {
+                "type": "IdentifierLiteral",
+                "value": "add"
+            },
+            "parameters": [
+                {
+                    "type": "FunctionParameter",
+                    "name": "a",
+                    "value": null,
+                    "value_type": "int"
                 },
-                "return_type": "int",
-                "parameters": [
+                {
+                    "type": "FunctionParameter",
+                    "name": "b",
+                    "value": null,
+                    "value_type": "int"
+                }
+            ],
+            "body": {
+                "type": "BlockStatement",
+                "statements": [
                     {
-                        "type": "FunctionParameter",
-                        "name": "a",
+                        "type": "ReturnStatement",
+                        "return_value": {
+                            "type": "InfixExpression",
+                            "left_node": {
+                                "type": "IdentifierLiteral",
+                                "value": "a"
+                            },
+                            "operator": "+",
+                            "right_node": {
+                                "type": "IdentifierLiteral",
+                                "value": "b"
+                            }
+                        }
+                    }
+                ]
+            },
+            "return_type": "int"
+        },
+        {
+            "type": "FunctionStatement",
+            "name": {
+                "type": "IdentifierLiteral",
+                "value": "main"
+            },
+            "parameters": [],
+            "body": {
+                "type": "BlockStatement",
+                "statements": [
+                    {
+                        "type": "LetStatement",
+                        "name": {
+                            "type": "IdentifierLiteral",
+                            "value": "a"
+                        },
+                        "value": {
+                            "type": "IntegerLiteral",
+                            "value": 0
+                        },
                         "value_type": "int"
                     },
                     {
-                        "type": "FunctionParameter",
-                        "name": "b",
-                        "value_type": "int"
-                    }
-                ],
-                "body": {
-                    "type": "BlockStatement",
-                    "statements": [
-                        {
-                            "type": "ReturnStatement",
-                            "return_value": {
+                        "type": "AssignStatement",
+                        "ident": {
+                            "type": "IdentifierLiteral",
+                            "value": "a"
+                        },
+                        "right_value": {
+                            "type": "IntegerLiteral",
+                            "value": 0
+                        }
+                    },
+                    {
+                        "type": "ExpressionStatement",
+                        "expr": {
+                            "type": "IfStatement",
+                            "condition": {
                                 "type": "InfixExpression",
                                 "left_node": {
                                     "type": "IdentifierLiteral",
                                     "value": "a"
                                 },
-                                "operator": "+",
+                                "operator": "==",
                                 "right_node": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "b"
+                                    "type": "IntegerLiteral",
+                                    "value": 0
                                 }
-                            }
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "FunctionStatement": {
-                "type": "FunctionStatement",
-                "name": {
-                    "type": "IdentifierLiteral",
-                    "value": "main"
-                },
-                "return_type": "int",
-                "parameters": [],
-                "body": {
-                    "type": "BlockStatement",
-                    "statements": [
-                        {
-                            "type": "ExpressionStatement",
-                            "expr": {
-                                "type": "CallExpression",
-                                "function": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "printf"
-                                },
-                                "arguments": [
+                            },
+                            "consequence": {
+                                "type": "BlockStatement",
+                                "statements": [
                                     {
-                                        "type": "StringLiteral",
-                                        "value": "Foo %i"
-                                    },
-                                    {
-                                        "type": "CallExpression",
-                                        "function": {
-                                            "type": "IdentifierLiteral",
-                                            "value": "foo"
-                                        },
-                                        "arguments": [
-                                            {
-                                                "type": "IntegerLiteral",
-                                                "value": 1
+                                        "type": "WhileStatement",
+                                        "condition": {
+                                            "type": "InfixExpression",
+                                            "left_node": {
+                                                "type": "IdentifierLiteral",
+                                                "value": "a"
                                             },
-                                            {
+                                            "operator": "<",
+                                            "right_node": {
                                                 "type": "IntegerLiteral",
-                                                "value": 2
+                                                "value": 10
                                             }
-                                        ]
+                                        },
+                                        "body": {
+                                            "type": "BlockStatement",
+                                            "statements": [
+                                                {
+                                                    "type": "ExpressionStatement",
+                                                    "expr": {
+                                                        "type": "CallExpression",
+                                                        "function": {
+                                                            "type": "IdentifierLiteral",
+                                                            "value": "printf"
+                                                        },
+                                                        "arguments": [
+                                                            {
+                                                                "type": "StringLiteral",
+                                                                "value": "a = %i\\n"
+                                                            },
+                                                            {
+                                                                "type": "IdentifierLiteral",
+                                                                "value": "a"
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "type": "AssignStatement",
+                                                    "ident": {
+                                                        "type": "IdentifierLiteral",
+                                                        "value": "a"
+                                                    },
+                                                    "right_value": {
+                                                        "type": "CallExpression",
+                                                        "function": {
+                                                            "type": "IdentifierLiteral",
+                                                            "value": "add"
+                                                        },
+                                                        "arguments": [
+                                                            {
+                                                                "type": "IdentifierLiteral",
+                                                                "value": "a"
+                                                            },
+                                                            {
+                                                                "type": "IntegerLiteral",
+                                                                "value": 1
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            "alternative": {
+                                "type": "BlockStatement",
+                                "statements": [
+                                    {
+                                        "type": "ExpressionStatement",
+                                        "expr": {
+                                            "type": "CallExpression",
+                                            "function": {
+                                                "type": "IdentifierLiteral",
+                                                "value": "printf"
+                                            },
+                                            "arguments": [
+                                                {
+                                                    "type": "StringLiteral",
+                                                    "value": "prank\\n"
+                                                }
+                                            ]
+                                        }
                                     }
                                 ]
                             }
-                        },
-                        {
-                            "type": "ReturnStatement",
-                            "return_value": {
+                        }
+                    },
+                    {
+                        "type": "WhileStatement",
+                        "condition": {
+                            "type": "InfixExpression",
+                            "left_node": {
+                                "type": "IntegerLiteral",
+                                "value": 1
+                            },
+                            "operator": "==",
+                            "right_node": {
                                 "type": "IntegerLiteral",
                                 "value": 0
                             }
+                        },
+                        "body": {
+                            "type": "BlockStatement",
+                            "statements": []
                         }
-                    ]
-                }
-            }
+                    },
+                    {
+                        "type": "ReturnStatement",
+                        "return_value": {
+                            "type": "IdentifierLiteral",
+                            "value": "a"
+                        }
+                    }
+                ]
+            },
+            "return_type": "int"
         }
     ]
 }
