@@ -217,100 +217,107 @@ class Compiler:
     # endregion
 
     # region Expressions
-    def __visit_infix_expression(self, node: InfixExpression) -> None:
+    def __visit_infix_expression(self, node: InfixExpression) -> tuple[ir.Value, ir.Type]:
         operator: str = node.operator
         left_value, left_type = self.__resolve_value(node.left_node)
         right_value, right_type = self.__resolve_value(node.right_node)
 
-        value, Type = None, None
+        # Implicit type conversion for booleans
+        if isinstance(left_type, ir.IntType) and left_type.width == 1:  # i1 (bool)
+            left_value = self.builder.zext(left_value, ir.IntType(32))  # Zero-extend to i32
+            left_type = ir.IntType(32)
+        elif isinstance(left_type, ir.FloatType) and isinstance(left_value, ir.IntType) and left_type.width == 1:  # i1 (bool)
+            left_value = self.builder.zext(left_value, ir.IntType(32))  # Zero-extend to i32, then convert to float
+            left_value = self.builder.sitofp(left_value, ir.FloatType())
+            left_type = ir.FloatType()
 
-        if isinstance(right_type, ir.IntType) and isinstance(left_type, ir.IntType):
-            Type = self.type_map['int']
+        if isinstance(right_type, ir.IntType) and right_type.width == 1:  # i1 (bool)
+            right_value = self.builder.zext(right_value, ir.IntType(32))  # Zero-extend to i32
+            right_type = ir.IntType(32)
+        elif isinstance(right_type, ir.FloatType) and isinstance(right_value, ir.IntType) and right_type.width == 1:  # i1 (bool)
+            right_value = self.builder.zext(right_value, ir.IntType(32))  # Zero-extend to i32, then convert to float
+            right_value = self.builder.sitofp(right_value, ir.FloatType())
+            right_type = ir.FloatType()
 
-            match operator:
-                case '+':
-                    value = self.builder.add(left_value, right_value)
-                case '-':
-                    value = self.builder.sub(left_value, right_value)
-                case '*':
-                    value = self.builder.mul(left_value, right_value)
-                case '/':
-                    value = self.builder.sdiv(left_value, right_value)
-                case '%':
-                    value = self.builder.srem(left_value, right_value)
-                case '<':
-                    value = self.builder.icmp_signed('<', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '<=':
-                    value = self.builder.icmp_signed('<=', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '>':
-                    value = self.builder.icmp_signed('>', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '>=':
-                    value = self.builder.icmp_signed('>=', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '==':
-                    value = self.builder.icmp_signed('==', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '!=':
-                    value = self.builder.icmp_signed('!=', left_value, right_value)
-                    Type = ir.IntType(1)
-        elif isinstance(right_type, ir.FloatType) and isinstance(left_type, ir.FloatType):
-            Type = ir.FloatType()
+        # Implicit conversion between int and float
+        if isinstance(left_type, ir.IntType) and isinstance(right_type, ir.FloatType):
+            left_value = self.builder.sitofp(left_value, ir.FloatType())
+            left_type = ir.FloatType()
+        elif isinstance(left_type, ir.FloatType) and isinstance(right_type, ir.IntType):
+            right_value = self.builder.sitofp(right_value, ir.FloatType())
+            right_type = ir.FloatType()
 
-            match operator:
-                case '+':
-                    value = self.builder.fadd(left_value, right_value)
-                case '-':
-                    value = self.builder.fsub(left_value, right_value)
-                case '*':
-                    value = self.builder.fmul(left_value, right_value)
-                case '/':
-                    value = self.builder.fdiv(left_value, right_value)
-                case '%':
-                    value = self.builder.frem(left_value, right_value)
-                case '<':
-                    value = self.builder.fcmp_signed('<', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '<=':
-                    value = self.builder.fcmp_signed('<=', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '>':
-                    value = self.builder.fcmp_signed('>', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '>=':
-                    value = self.builder.fcmp_signed('>=', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '==':
-                    value = self.builder.fcmp_signed('==', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '!=':
-                    value = self.builder.fcmp_signed('!=', left_value, right_value)
-                    Type = ir.IntType(1)
-        
-        return value, Type
-    
-    def __visit_call_expression(self, node: CallExpression) -> tuple[ir.Instruction, ir.Type]:
+        value, result_type = None, None
+
+        # Handle integer operations
+        if isinstance(left_type, ir.IntType) and isinstance(right_type, ir.IntType):
+            result_type = self.type_map['int']
+            value = self.__process_int_operations(operator, left_value, right_value)
+
+        # Handle floating-point operations
+        elif isinstance(left_type, ir.FloatType) and isinstance(right_type, ir.FloatType):
+            result_type = ir.FloatType()
+            value = self.__process_float_operations(operator, left_value, right_value)
+
+        # Error if types are incompatible
+        if value is None:
+            raise TypeError(f"Unsupported operand types for operator '{operator}': {left_type}, {right_type}")
+
+        return value, result_type
+
+    def __process_int_operations(self, operator: str, left_value, right_value) -> ir.Value:
+        match operator:
+            case '+': return self.builder.add(left_value, right_value)
+            case '-': return self.builder.sub(left_value, right_value)
+            case '*': return self.builder.mul(left_value, right_value)
+            case '/': return self.builder.sdiv(left_value, right_value)
+            case '%': return self.builder.srem(left_value, right_value)
+            case '<': return self.builder.icmp_signed('<', left_value, right_value)
+            case '<=': return self.builder.icmp_signed('<=', left_value, right_value)
+            case '>': return self.builder.icmp_signed('>', left_value, right_value)
+            case '>=': return self.builder.icmp_signed('>=', left_value, right_value)
+            case '==': return self.builder.icmp_signed('==', left_value, right_value)
+            case '!=': return self.builder.icmp_signed('!=', left_value, right_value)
+            case _: raise ValueError(f"Unsupported operator for integers: {operator}")
+
+    def __process_float_operations(self, operator: str, left_value, right_value) -> ir.Value:
+        match operator:
+            case '+': return self.builder.fadd(left_value, right_value)
+            case '-': return self.builder.fsub(left_value, right_value)
+            case '*': return self.builder.fmul(left_value, right_value)
+            case '/': return self.builder.fdiv(left_value, right_value)
+            case '%': return self.builder.frem(left_value, right_value)
+            case '<': return self.builder.fcmp_ordered('<', left_value, right_value)
+            case '<=': return self.builder.fcmp_ordered('<=', left_value, right_value)
+            case '>': return self.builder.fcmp_ordered('>', left_value, right_value)
+            case '>=': return self.builder.fcmp_ordered('>=', left_value, right_value)
+            case '==': return self.builder.fcmp_ordered('==', left_value, right_value)
+            case '!=': return self.builder.fcmp_ordered('!=', left_value, right_value)
+            case _: raise ValueError(f"Unsupported operator for floats: {operator}")
+
+
+    def __visit_call_expression(self, node: CallExpression) -> tuple[ir.Value, ir.Type]:
         name: str = node.function.value
         params: list[Expression] = node.arguments
 
-        args = []
-        types = []
-        if len(params) > 0:
-            for x in params:
-                p_val, p_type = self.__resolve_value(x)
-                args.append(p_val)
-                types.append(p_type)
+        # Resolve parameters
+        args, types = [], []
+        for param in params:
+            arg_value, arg_type = self.__resolve_value(param)
+            args.append(arg_value)
+            types.append(arg_type)
 
-        match name:
-            case 'printf':
-                ret = self.builtin_printf(params = args, return_type = types[0])
-                ret_type = self.type_map['int']
-            case _:
-                func, ret_type = self.env.lookup(name)
-                ret = self.builder.call(func, args)
-        
+        # Handle built-in functions like 'printf'
+        if name == 'printf':
+            if not types:
+                raise ValueError("'printf' requires at least one argument")
+            ret = self.builtin_printf(params=args, return_type=types[0])
+            ret_type = self.type_map['int']
+        else:
+            # Lookup custom functions in the environment
+            func, ret_type = self.env.lookup(name)
+            ret = self.builder.call(func, args)
+
         return ret, ret_type
     # endregion
 

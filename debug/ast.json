@@ -5,48 +5,6 @@
             "type": "FunctionStatement",
             "name": {
                 "type": "IdentifierLiteral",
-                "value": "add"
-            },
-            "parameters": [
-                {
-                    "type": "FunctionParameter",
-                    "name": "a",
-                    "value": null,
-                    "value_type": "int"
-                },
-                {
-                    "type": "FunctionParameter",
-                    "name": "b",
-                    "value": null,
-                    "value_type": "int"
-                }
-            ],
-            "body": {
-                "type": "BlockStatement",
-                "statements": [
-                    {
-                        "type": "ReturnStatement",
-                        "return_value": {
-                            "type": "InfixExpression",
-                            "left_node": {
-                                "type": "IdentifierLiteral",
-                                "value": "a"
-                            },
-                            "operator": "+",
-                            "right_node": {
-                                "type": "IdentifierLiteral",
-                                "value": "b"
-                            }
-                        }
-                    }
-                ]
-            },
-            "return_type": "int"
-        },
-        {
-            "type": "FunctionStatement",
-            "name": {
-                "type": "IdentifierLiteral",
                 "value": "main"
             },
             "parameters": [],
@@ -62,32 +20,16 @@
                         "value": {
                             "type": "InfixExpression",
                             "left_node": {
-                                "type": "InfixExpression",
-                                "left_node": {
-                                    "type": "IntegerLiteral",
-                                    "value": 1
-                                },
-                                "operator": "+",
-                                "right_node": {
-                                    "type": "InfixExpression",
-                                    "left_node": {
-                                        "type": "IntegerLiteral",
-                                        "value": 2
-                                    },
-                                    "operator": "*",
-                                    "right_node": {
-                                        "type": "IntegerLiteral",
-                                        "value": 3
-                                    }
-                                }
-                            },
-                            "operator": "-",
-                            "right_node": {
                                 "type": "IntegerLiteral",
-                                "value": 7
+                                "value": 1
+                            },
+                            "operator": "+",
+                            "right_node": {
+                                "type": "FloatLiteral",
+                                "value": 2.5
                             }
                         },
-                        "value_type": "int"
+                        "value_type": "float"
                     },
                     {
                         "type": "ExpressionStatement",
@@ -100,7 +42,7 @@
                             "arguments": [
                                 {
                                     "type": "StringLiteral",
-                                    "value": "a starts off as %i\\n"
+                                    "value": "a = %f\\n"
                                 },
                                 {
                                     "type": "IdentifierLiteral",
@@ -110,79 +52,23 @@
                         }
                     },
                     {
-                        "type": "WhileStatement",
-                        "condition": {
+                        "type": "ReturnStatement",
+                        "return_value": {
                             "type": "InfixExpression",
                             "left_node": {
                                 "type": "IdentifierLiteral",
                                 "value": "a"
                             },
-                            "operator": "<",
+                            "operator": ">",
                             "right_node": {
-                                "type": "IntegerLiteral",
-                                "value": 10
+                                "type": "FloatLiteral",
+                                "value": 3.5
                             }
-                        },
-                        "body": {
-                            "type": "BlockStatement",
-                            "statements": [
-                                {
-                                    "type": "ExpressionStatement",
-                                    "expr": {
-                                        "type": "CallExpression",
-                                        "function": {
-                                            "type": "IdentifierLiteral",
-                                            "value": "printf"
-                                        },
-                                        "arguments": [
-                                            {
-                                                "type": "StringLiteral",
-                                                "value": "a = %i\\n"
-                                            },
-                                            {
-                                                "type": "IdentifierLiteral",
-                                                "value": "a"
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "type": "AssignStatement",
-                                    "ident": {
-                                        "type": "IdentifierLiteral",
-                                        "value": "a"
-                                    },
-                                    "right_value": {
-                                        "type": "CallExpression",
-                                        "function": {
-                                            "type": "IdentifierLiteral",
-                                            "value": "add"
-                                        },
-                                        "arguments": [
-                                            {
-                                                "type": "IdentifierLiteral",
-                                                "value": "a"
-                                            },
-                                            {
-                                                "type": "IntegerLiteral",
-                                                "value": 1
-                                            }
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "type": "ReturnStatement",
-                        "return_value": {
-                            "type": "IdentifierLiteral",
-                            "value": "a"
                         }
                     }
                 ]
             },
-            "return_type": "int"
+            "return_type": "bool"
         }
     ]
 }
