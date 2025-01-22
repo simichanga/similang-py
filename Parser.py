@@ -53,6 +53,7 @@ class Parser:
             TokenType.IF: self.__parse_if_statement,
             TokenType.TRUE: self.__parse_boolean,
             TokenType.FALSE: self.__parse_boolean,
+            TokenType.STRING: self.__parse_string_literal,
         }
         self.infix_parse_fns: dict[TokenType, Callable] = { tt: self.__parse_infix_expression if tt != TokenType.LPAREN else self.__parse_call_expression for tt in (TokenType) } # TODO ill regret this later on
 
@@ -75,7 +76,7 @@ class Parser:
             self.__next_token()
             return True
         else:
-            self.peek_error(tt)
+            self.__peek_error(tt)
             return False
 
     def __current_precedence(self) -> PrecedenceType:
@@ -121,6 +122,8 @@ class Parser:
                 return self.__parse_function_statement()
             case TokenType.RETURN:
                 return self.__parse_return_statement()
+            case TokenType.WHILE:
+                return self.__parse_while_statement()
             case _:
                 return self.__parse_expression_statement()
 
@@ -298,6 +301,21 @@ class Parser:
             alternative = self.__parse_block_statement()
 
         return IfStatement(condition, consequence, alternative)
+
+    def __parse_while_statement(self) -> WhileStatement:
+        condition: Expression = None
+        body: BlockStatement = None
+
+        self.__next_token()
+
+        condition = self.__parse_expression(PrecedenceType.P_LOWEST)
+
+        if not self.__expect_peek(TokenType.LBRACE):
+            return None
+        
+        body = self.__parse_block_statement()
+
+        return WhileStatement(condition = condition, body = body)
     # endregion
 
     # region Expression Methods
@@ -397,4 +415,7 @@ class Parser:
     
     def __parse_boolean(self) -> BooleanLiteral:
         return BooleanLiteral(value = self.__current_token_is(TokenType.TRUE))
+
+    def __parse_string_literal(self) -> StringLiteral:
+        return StringLiteral(value = self.current_token.literal)
     # endregion

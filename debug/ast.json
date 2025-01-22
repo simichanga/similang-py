@@ -6,7 +6,7 @@
                 "type": "FunctionStatement",
                 "name": {
                     "type": "IdentifierLiteral",
-                    "value": "add"
+                    "value": "foo"
                 },
                 "return_type": "int",
                 "parameters": [
@@ -56,23 +56,43 @@
                     "type": "BlockStatement",
                     "statements": [
                         {
-                            "type": "ReturnStatement",
-                            "return_value": {
+                            "type": "ExpressionStatement",
+                            "expr": {
                                 "type": "CallExpression",
                                 "function": {
                                     "type": "IdentifierLiteral",
-                                    "value": "add"
+                                    "value": "printf"
                                 },
                                 "arguments": [
                                     {
-                                        "type": "IntegerLiteral",
-                                        "value": 1
+                                        "type": "StringLiteral",
+                                        "value": "Foo %i"
                                     },
                                     {
-                                        "type": "IntegerLiteral",
-                                        "value": 2
+                                        "type": "CallExpression",
+                                        "function": {
+                                            "type": "IdentifierLiteral",
+                                            "value": "foo"
+                                        },
+                                        "arguments": [
+                                            {
+                                                "type": "IntegerLiteral",
+                                                "value": 1
+                                            },
+                                            {
+                                                "type": "IntegerLiteral",
+                                                "value": 2
+                                            }
+                                        ]
                                     }
                                 ]
+                            }
+                        },
+                        {
+                            "type": "ReturnStatement",
+                            "return_value": {
+                                "type": "IntegerLiteral",
+                                "value": 0
                             }
                         }
                     ]

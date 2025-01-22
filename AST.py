@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import Any, Optional, Union
 
 class NodeType(Enum):
     Program = 'Program'
@@ -12,6 +13,7 @@ class NodeType(Enum):
     ReturnStatement = 'ReturnStatement'
     AssignStatement = 'AssignStatement'
     IfStatement = 'IfStatement'
+    WhileStatement = 'WhileStatement'
 
     # Expressions
     InfixExpression = 'InfixExpression'
@@ -22,6 +24,7 @@ class NodeType(Enum):
     FloatLiteral = 'FloatLiteral'
     IdentifierLiteral = 'IdentifierLiteral'
     BooleanLiteral = 'BooleanLiteral'
+    StringLiteral = 'StringLiteral'
 
     # Helper
     FunctionParameter = 'FunctionParameter'
@@ -178,6 +181,21 @@ class IfStatement(Statement):
             'consequence': self.consequence.json(),
             'alternative': self.alternative.json() if self.alternative is not None else None
         }
+
+class WhileStatement(Statement):
+    def __init__(self, condition: Expression, body: BlockStatement = None) -> None:
+        self.condition = condition
+        self.body = body if body is not None else []
+
+    def type(self) -> NodeType:
+        return NodeType.WhileStatement
+
+    def json(self) -> dict:
+        return {
+            'type': self.type().value,
+            'condition': self.condition.json(),
+            'body': self.body.json(),
+        }
 # endregion
 
 # region Expressions
@@ -216,55 +234,38 @@ class CallExpression(Expression):
 # endregion
 
 # region Literals
-class IntegerLiteral(Expression):
-    def __init__(self, value: int = None) -> None:
-        self.value: int = value
-    
+class AbstractLiteral(Expression):
+    def __init__(self, value: any = None) -> None:
+        self.value = value
+
+    @abstractmethod
+    def type(self) -> NodeType:
+        self.node_type
+
+    def json(self) -> dict:
+        return {
+            'type': self.type().value,
+            'value': self.value,
+        }
+
+class IntegerLiteral(AbstractLiteral):
     def type(self) -> NodeType:
         return NodeType.IntegerLiteral
 
-    def json(self) -> dict:
-        return {
-            'type': self.type().value,
-            'value': self.value,
-        }
-
-class FloatLiteral(Expression):
-    def __init__(self, value: float = None) -> None:
-        self.value: float = value
-    
+class FloatLiteral(AbstractLiteral):
     def type(self) -> NodeType:
         return NodeType.FloatLiteral
 
-    def json(self) -> dict:
-        return {
-            'type': self.type().value,
-            'value': self.value,
-        }
 
-class IdentifierLiteral(Expression):
-    def __init__(self, value: str = None) -> None:
-        self.value: str = value
-    
+class IdentifierLiteral(AbstractLiteral):
     def type(self) -> NodeType:
         return NodeType.IdentifierLiteral
 
-    def json(self) -> dict:
-        return {
-            'type': self.type().value,
-            'value': self.value,
-        }
-
-class BooleanLiteral(Expression):
-    def __init__(self, value: bool = None) -> None:
-        self.value: bool = value
-    
+class BooleanLiteral(AbstractLiteral):
     def type(self) -> NodeType:
         return NodeType.BooleanLiteral
 
-    def json(self) -> dict:
-        return {
-            'type': self.type().value,
-            'value': self.value,
-        }
+class StringLiteral(AbstractLiteral):
+    def type(self) -> NodeType:
+        return NodeType.StringLiteral
 # endregion

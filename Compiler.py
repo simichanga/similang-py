@@ -10,11 +10,16 @@ class Compiler:
             'int': ir.IntType(32),
             'float': ir.FloatType(),
             'bool': ir.IntType(1),
+
+            'str': ir.PointerType(ir.IntType(8)),
+            'void': ir.VoidType(),
         }
 
         self.module: ir.Module = ir.Module('main')
 
         self.builder: ir.IRBuilder = ir.IRBuilder()
+
+        self.counter: int = 0
 
         self.env: Environment = Environment()
 
@@ -23,6 +28,14 @@ class Compiler:
         self.__initialize_builtins()
 
     def __initialize_builtins(self) -> None:
+        def __init_print() -> ir.Function:
+            fnty: ir.FunctionType = ir.FunctionType(
+                self.type_map['int'],
+                [ir.IntType(8).as_pointer()],
+                var_arg = True
+            )
+            return ir.Function(self.module, fnty, 'printf')
+
         def __init__booleans() -> tuple[ir.GlobalVariable, ir.GlobalVariable]:
             bool_type: ir.Type = self.type_map['bool']
 
@@ -36,9 +49,15 @@ class Compiler:
 
             return true_var, false_var
 
+        self.env.define('printf', __init_print(), ir.IntType(32))
+
         true_var, false_var = __init__booleans()
         self.env.define('true', true_var, true_var.type)
         self.env.define('false', false_var, false_var.type)
+
+    def __increment_counter(self) -> int:
+        self.counter += 1
+        return self.counter
 
     def compile(self, node: Node) -> None:
         match node.type():
@@ -59,6 +78,8 @@ class Compiler:
                 self.__visit_assign_statement(node)
             case NodeType.IfStatement:
                 self.__visit_if_statement(node)
+            case NodeType.WhileStatement:
+                self.__visit_while_statement(node)
 
             case NodeType.InfixExpression:
                 self.__visit_infix_expression(node)
@@ -177,6 +198,22 @@ class Compiler:
                     self.compile(consequence)
                 with otherwise:
                     self.compile(alternative)
+    def __visit_while_statement(self, node: WhileStatement) -> None:
+        condition: Expression = node.condition
+        body: BlockStatement = node.body
+
+        test, _ = self.__resolve_value(condition)
+
+        while_loop_entry = self.builder.append_basic_block(f'while_loop_entry_{self.__increment_counter()}')
+        while_loop_otherwise = self.builder.append_basic_block(f'while_loop_otherwise_{self.counter}')
+
+        self.builder.cbranch(test, while_loop_entry, while_loop_otherwise)
+        self.builder.position_at_start(while_loop_entry)
+        self.compile(body)
+        test, _ = self.__resolve_value(condition)
+
+        self.builder.cbranch(test, while_loop_entry, while_loop_otherwise)
+        self.builder.position_at_start(while_loop_otherwise)
     # endregion
 
     # region Expressions
@@ -267,12 +304,14 @@ class Compiler:
                 types.append(p_type)
 
         match name:
+            case 'printf':
+                ret = self.builtin_printf(params = args, return_type = types[0])
+                ret_type = self.type_map['int']
             case _:
                 func, ret_type = self.env.lookup(name)
                 ret = self.builder.call(func, args)
         
         return ret, ret_type
-
     # endregion
 
     # endregion
@@ -295,10 +334,47 @@ class Compiler:
             case NodeType.BooleanLiteral:
                 node: BooleanLiteral = node
                 return ir.Constant(ir.IntType(1), 1 if node.value else 0), ir.IntType
+            case NodeType.StringLiteral:
+                node: StringLiteral = node
+                string, Type = self.__convert_string(node.value)
+                return string, Type
 
             # Expression Values
             case NodeType.InfixExpression:
                 return self.__visit_infix_expression(node)
             case NodeType.CallExpression:
                 return self.__visit_call_expression(node)
+
+    def __convert_string(self, string: str) -> tuple[ir.Constant, ir.ArrayType]:
+        string = string.replace('\\n', '\n\0')
+
+        fmt: str = f'{string}\0'
+        c_fmt: ir.Constant = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)), bytearray(fmt.encode('utf8')))
+
+        global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name = f'__str_{self.__increment_counter()}')
+        global_fmt.linkage = 'internal'
+        global_fmt.global_constant = True
+        global_fmt.initializer = c_fmt
+
+        return global_fmt, global_fmt.type
+    
+    def builtin_printf(self, params: list[ir.Instruction], return_type: ir.Type) -> None:
+        func, _ = self.env.lookup('printf')
+
+        c_str = self.builder.alloca(return_type)
+        self.builder.store(params[0], c_str)
+
+        rest_params = params[1:]
+
+        if isinstance(params[0], ir.LoadInstr):
+            c_fmt: ir.LoadInstr = params[0]
+            g_var_ptr = c_fmt.operands[0]
+            string_val = self.builder.load(g_var_ptr)
+            fmt_arg = self.builder.bitcast(string_val, ir.IntType(8).as_pointer())
+            return self.builder.call(func, [fmt_arg, *rest_params])
+        else:
+            # TODO handle printing floats
+            fmt_arg = self.builder.bitcast(self.module.get_global(f'__str_{self.counter}'), ir.IntType(8).as_pointer())
+
+            return self.builder.call(func, [fmt_arg, *rest_params])
     # endregion

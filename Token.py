@@ -10,6 +10,7 @@ class TokenType(Enum):
     IDENT = 'IDENT'
     INT = 'INT'
     FLOAT = 'FLOAT'
+    STRING = 'STRING'
 
     # Arithmetic Symbols
     PLUS = 'PLUS'
@@ -48,6 +49,7 @@ class TokenType(Enum):
     ELSE = 'ELSE'
     TRUE = 'TRUE'
     FALSE = 'FALSE'
+    WHILE = 'WHILE'
 
     # Typing
     TYPE = 'TYPE'
@@ -73,9 +75,10 @@ KEYWORDS: dict[str, TokenType] = {
     'else': TokenType.ELSE,
     'true': TokenType.TRUE,
     'false': TokenType.FALSE,
+    'while': TokenType.WHILE
 }
 
-TYPE_KEYWORDS: list[str] = ['int', 'float']
+TYPE_KEYWORDS: list[str] = ['int', 'float', 'str', 'void']
 
 def lookup_ident(ident: str) -> TokenType:
     tt: TokenType | None = KEYWORDS.get(ident)
