@@ -16,6 +16,9 @@ class NodeType(Enum):
     AssignStatement = 'AssignStatement'
     IfStatement = 'IfStatement'
     WhileStatement = 'WhileStatement'
+    ForStatement = 'ForStatement'
+    BreakStatement = 'BreakStatement'
+    ContinueStatement = 'ContinueStatement' 
 
     # Expressions
     InfixExpression = 'InfixExpression'
@@ -149,6 +152,36 @@ class WhileStatement(Statement):
 
     def type(self) -> NodeType:
         return NodeType.WhileStatement
+
+class ForStatement(Statement):
+    def __init__(
+        self,
+        var_declaration: LetStatement | None = None,
+        condition: Expression | None = None,
+        action: AssignStatement | None = None,
+        body: BlockStatement | None = None
+    ) -> None:
+        self.var_declaration = var_declaration
+        self.condition = condition
+        self.action = action
+        self.body = body
+
+    def type(self) -> NodeType:
+        return NodeType.ForStatement
+
+class BreakStatement(Statement):
+    def __init__(self) -> None:
+        pass
+
+    def type(self) -> NodeType:
+        return NodeType.BreakStatement
+
+class ContinueStatement(Statement):
+    def __init__(self) -> None:
+        pass
+
+    def type(self) -> NodeType:
+        return NodeType.ContinueStatement
 # endregion
 
 # region Expressions

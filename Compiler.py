@@ -27,6 +27,9 @@ class Compiler:
 
         self.__initialize_builtins()
 
+        self.breakpoints: List[ir.Block] = []
+        self.continues: List[ir.Block] = []
+
     def __initialize_builtins(self) -> None:
         def __init_print() -> ir.Function:
             fnty: ir.FunctionType = ir.FunctionType(
@@ -80,6 +83,12 @@ class Compiler:
                 self.__visit_if_statement(node)
             case NodeType.WhileStatement:
                 self.__visit_while_statement(node)
+            case NodeType.ForStatement:
+                self.__visit_for_statement(node)
+            case NodeType.BreakStatement:
+                self.__visit_break_statement(node)
+            case NodeType.ContinueStatement:
+                self.__visit_continue_statement(node)
 
             case NodeType.InfixExpression:
                 self.__visit_infix_expression(node)
@@ -214,6 +223,44 @@ class Compiler:
 
         self.builder.cbranch(test, while_loop_entry, while_loop_otherwise)
         self.builder.position_at_start(while_loop_otherwise)
+
+    def __visit_for_statement(self, node: ForStatement) -> None:
+        var_declaration: LetStatement = node.var_declaration
+        condition: Expression = node.condition
+        action: AssignStatement = node.action
+        body: BlockStatement = node.body
+
+        previous_env = self.env
+        self.env = Environment(parent = previous_env)
+
+        self.compile(var_declaration)
+
+        for_loop_entry = self.builder.append_basic_block(f'for_loop_entry_{self.__increment_counter()}')
+        for_loop_otherwise = self.builder.append_basic_block(f'for_loop_otherwise_{self.counter}')
+
+        self.breakpoints.append(for_loop_otherwise)
+        self.continues.append(for_loop_entry)
+
+        self.builder.branch(for_loop_entry)
+        self.builder.position_at_start(for_loop_entry)
+
+        self.compile(body)
+        self.compile(action)
+
+        test, _ = self.__resolve_value(condition)
+
+        self.builder.cbranch(test, for_loop_entry, for_loop_otherwise)
+
+        self.builder.position_at_start(for_loop_otherwise)
+
+        self.breakpoints.pop()
+        self.continues.pop()
+
+    def __visit_break_statement(self, node: BreakStatement) -> None:
+        self.builder.branch(self.breakpoints[-1])
+
+    def __visit_continue_statement(self, node: ContinueStatement) -> None:
+        self.builder.branch(self.continues[-1])
     # endregion
 
     # region Expressions

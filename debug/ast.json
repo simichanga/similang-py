@@ -18,35 +18,143 @@
                             "value": "a"
                         },
                         "value": {
-                            "type": "InfixExpression",
-                            "left_node": {
-                                "type": "IntegerLiteral",
-                                "value": 1
-                            },
-                            "operator": "+",
-                            "right_node": {
-                                "type": "FloatLiteral",
-                                "value": 2.5
-                            }
+                            "type": "IntegerLiteral",
+                            "value": 0
                         },
-                        "value_type": "float"
+                        "value_type": "int"
                     },
                     {
-                        "type": "ExpressionStatement",
-                        "expr": {
-                            "type": "CallExpression",
-                            "function": {
+                        "type": "ForStatement",
+                        "var_declaration": {
+                            "type": "LetStatement",
+                            "name": {
                                 "type": "IdentifierLiteral",
-                                "value": "printf"
+                                "value": "i"
                             },
-                            "arguments": [
+                            "value": {
+                                "type": "IntegerLiteral",
+                                "value": 0
+                            },
+                            "value_type": "int"
+                        },
+                        "condition": {
+                            "type": "InfixExpression",
+                            "left_node": {
+                                "type": "IdentifierLiteral",
+                                "value": "i"
+                            },
+                            "operator": "<",
+                            "right_node": {
+                                "type": "IntegerLiteral",
+                                "value": 10
+                            }
+                        },
+                        "action": {
+                            "type": "AssignStatement",
+                            "ident": {
+                                "type": "IdentifierLiteral",
+                                "value": "i"
+                            },
+                            "right_value": {
+                                "type": "InfixExpression",
+                                "left_node": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "i"
+                                },
+                                "operator": "+",
+                                "right_node": {
+                                    "type": "IntegerLiteral",
+                                    "value": 1
+                                }
+                            }
+                        },
+                        "body": {
+                            "type": "BlockStatement",
+                            "statements": [
                                 {
-                                    "type": "StringLiteral",
-                                    "value": "a = %f\\n"
+                                    "type": "ExpressionStatement",
+                                    "expr": {
+                                        "type": "IfStatement",
+                                        "condition": {
+                                            "type": "InfixExpression",
+                                            "left_node": {
+                                                "type": "IdentifierLiteral",
+                                                "value": "i"
+                                            },
+                                            "operator": "==",
+                                            "right_node": {
+                                                "type": "IntegerLiteral",
+                                                "value": 5
+                                            }
+                                        },
+                                        "consequence": {
+                                            "type": "BlockStatement",
+                                            "statements": [
+                                                {
+                                                    "type": "BreakStatement"
+                                                }
+                                            ]
+                                        },
+                                        "alternative": null
+                                    }
                                 },
                                 {
-                                    "type": "IdentifierLiteral",
-                                    "value": "a"
+                                    "type": "ExpressionStatement",
+                                    "expr": {
+                                        "type": "IfStatement",
+                                        "condition": {
+                                            "type": "InfixExpression",
+                                            "left_node": {
+                                                "type": "IdentifierLiteral",
+                                                "value": "i"
+                                            },
+                                            "operator": "==",
+                                            "right_node": {
+                                                "type": "IntegerLiteral",
+                                                "value": 2
+                                            }
+                                        },
+                                        "consequence": {
+                                            "type": "BlockStatement",
+                                            "statements": [
+                                                {
+                                                    "type": "ContinueStatement"
+                                                }
+                                            ]
+                                        },
+                                        "alternative": null
+                                    }
+                                },
+                                {
+                                    "type": "ExpressionStatement",
+                                    "expr": {
+                                        "type": "CallExpression",
+                                        "function": {
+                                            "type": "IdentifierLiteral",
+                                            "value": "printf"
+                                        },
+                                        "arguments": [
+                                            {
+                                                "type": "StringLiteral",
+                                                "value": "i = %i\\n"
+                                            },
+                                            {
+                                                "type": "IdentifierLiteral",
+                                                "value": "i"
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "AssignStatement",
+                                    "ident": {
+                                        "type": "IdentifierLiteral",
+                                        "value": "a"
+                                    },
+                                    "right_value": {
+                                        "type": "IdentifierLiteral",
+                                        "value": "i"
+                                    }
                                 }
                             ]
                         }
@@ -54,21 +162,13 @@
                     {
                         "type": "ReturnStatement",
                         "return_value": {
-                            "type": "InfixExpression",
-                            "left_node": {
-                                "type": "IdentifierLiteral",
-                                "value": "a"
-                            },
-                            "operator": ">",
-                            "right_node": {
-                                "type": "FloatLiteral",
-                                "value": 3.5
-                            }
+                            "type": "IdentifierLiteral",
+                            "value": "a"
                         }
                     }
                 ]
             },
-            "return_type": "bool"
+            "return_type": "int"
         }
     ]
 }

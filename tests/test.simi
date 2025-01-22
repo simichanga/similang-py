@@ -1,7 +1,12 @@
-fn main() -> bool {
-    let a: float = 1 + 2.5;
+fn main() -> int {
+    let a: int = 0;
 
-    printf("a = %f\n", a);
+    for (let i: int = 0; i < 10; i = i + 1) {
+        if (i == 5) { break; }
 
-    return a > 3.5;
+        printf("i = %i\n", i);
+        a = i;
+    }
+
+    return a;
 }
