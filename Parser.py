@@ -81,22 +81,17 @@ class Parser:
 
     def __current_precedence(self) -> PrecedenceType:
         prec: int | None = PRECEDENCES.get(self.current_token.type)
-        if prec is None:
-            return PrecedenceType.P_LOWEST
-        return prec
+        return prec or PrecedenceType.P_LOWEST
 
     def __peek_precedence(self) -> PrecedenceType:
         prec: int | None = PRECEDENCES.get(self.peek_token.type)
-        if prec is None:
-            return PrecedenceType.P_LOWEST
-        return prec
+        return prec or PrecedenceType.P_LOWEST
     
     def __peek_error(self, tt: TokenType) -> None:
         self.errors.append(f'Expected next token to be {tt}, got {self.peek_token.type} instead.')
 
     def __no_prefix_parse_fn_error(self, tt: TokenType) -> None:
         self.errors.append(f'No Prefix Parse Function for {tt} found.')
-
     # endregion
 
     def parse_program(self) -> None:
@@ -109,6 +104,7 @@ class Parser:
             self.__next_token()
 
         return program
+    
     # region Statement Methods
     def __parse_statement(self) -> Statement:
         if self.current_token.type == TokenType.IDENT and self.__peek_token_is(TokenType.EQ):
@@ -127,37 +123,38 @@ class Parser:
             case _:
                 return self.__parse_expression_statement()
 
-    
-
     def __parse_expression_statement(self) -> ExpressionStatement:
         expr = self.__parse_expression(PrecedenceType.P_LOWEST)
 
         if self.__peek_token_is(TokenType.SEMICOLON):
             self.__next_token()
+        
+        return ExpressionStatement(expr = expr)
 
-        stmt: ExpressionStatement = ExpressionStatement(expr = expr)
-
-        return stmt
-
+    # TODO refactor this so it has proper error checking
     def __parse_let_statement(self) -> LetStatement:
         # let a: int = 10;
         stmt: LetStatement = LetStatement()
 
         if not self.__expect_peek(TokenType.IDENT):
+            raise SyntaxError(f'Expected identifier')
             return None
 
         stmt.name = IdentifierLiteral(value = self.current_token.literal)
 
         # Syntax Checking
         if not self.__expect_peek(TokenType.COLON):
+            raise SyntaxError(f'Variable expects colon.')
             return None
         
         if not self.__expect_peek(TokenType.TYPE):
+            raise SyntaxError(f'Variable expects type.')
             return None
 
         stmt.value_type = self.current_token.literal
 
         if not self.__expect_peek(TokenType.EQ):
+            raise SyntaxError(f'Variable expects initialization on creation.')
             return None
 
         self.__next_token()

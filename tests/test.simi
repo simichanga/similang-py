@@ -3,9 +3,9 @@ fn add(a: int, b: int) -> int {
 }
 
 fn main() -> int {
-    let a: int = 0;
+    let a: int;
 
-    a = 0;
+    printf("a starts off as %i\n", a);
 
     if a == 0 {
         while a < 10 {
