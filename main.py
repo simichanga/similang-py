@@ -2,88 +2,39 @@ from Lexer import Lexer
 from Parser import Parser
 from Compiler import Compiler
 from AST import Program
-import json
-import time
 
-from llvmlite import ir
-import llvmlite.binding as llvm
-from ctypes import CFUNCTYPE, c_int, c_float
+from pipeline.lexer_debugger import debug_lexer
+from pipeline.parser_debugger import debug_parser
+from pipeline.compiler_debugger import debug_compiler
+from pipeline.executor import execute_code
 
-LEXER_DEBUG: bool = False
-PARSER_DEBUG: bool = False
-COMPILER_DEBUG: bool = False
-RUN_CODE: bool = True
+from utils.config import Config
 
 if __name__ == '__main__':
     with open('tests/test.simi', 'r') as f:
-        code: str = f.read()
-        
-    l: Lexer = Lexer(source = code)
-    p: Parser = Parser(lexer = l)
+        code = f.read()
 
-    if len(p.errors) > 0:
-        print(err for err in p.errors)
+    lexer = Lexer(source=code)
+    parser = Parser(lexer=lexer)
+
+    if len(parser.errors) > 0:
+        print(err for err in parser.errors)
         exit(1)
 
-    if LEXER_DEBUG:
-        print('===== LEXER DEBUG =====')
+    if Config.LEXER_DEBUG:
+        debug_lexer(code)
 
-        debug_lex: Lexer = Lexer(source = code)
+    program: Program = parser.parse_program()
 
-        while debug_lex.current_char is not None:
-            print(debug_lex.next_token())
+    if Config.PARSER_DEBUG:
+        debug_parser(parser, program)
 
-    program: Program = p.parse_program()
-    
-    if PARSER_DEBUG:
-        print('===== PARSER DEBUG =====')    
-        
-        PATH: str = 'debug/ast.json'
-        with open(PATH, 'w') as f:
-            json.dump(program.json(), f, indent = 4)
-        
-        print(f'Wrote AST to `{PATH}` successfully.')
+    compiler: Compiler = Compiler()
+    compiler.compile(node=program)
+    module = compiler.module
 
-    c: Compiler = Compiler()
-    c.compile(node = program)
+    if Config.COMPILER_DEBUG:
+        debug_compiler(module)
 
-    # Output Steps
-    module: ir.Module = c.module
-    module.triple = llvm.get_default_triple()
-
-    if COMPILER_DEBUG:
-        print('===== COMPILER DEBUG =====')
-
-        PATH: str = 'debug/ir.ll'
-        with open('debug/ir.ll', 'w') as f:
-            f.write(str(module))
-
-        print(f'Wrote IR to `{PATH}` successfully.')
-
-    if RUN_CODE:
-        llvm.initialize()
-        llvm.initialize_native_target()
-        llvm.initialize_native_asmprinter()
-
-        try:
-            llvm_ir_parsed = llvm.parse_assembly(str(module))
-            llvm_ir_parsed.verify()
-        except Exception as e:
-            print(e)
-            raise
-
-        target_machine = llvm.Target.from_default_triple().create_target_machine()
-
-        engine = llvm.create_mcjit_compiler(llvm_ir_parsed, target_machine)
-        engine.finalize_object()
-
-        entry = engine.get_function_address('main')
-        cfunc = CFUNCTYPE(c_int)(entry)
-
-        st = time.time()
-
-        result = cfunc()
-
-        et = time.time()
-
-        print(f'\nProgram returned: {result}\n=== Executed in {round((et - st) * 1000, 6)} ms. ===')
+    if Config.RUN_CODE:
+        execute_code(module)

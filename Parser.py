@@ -42,8 +42,8 @@ class Parser:
 
         self.errors: list[str] = []
 
-        self.current_token: Token = None
-        self.peek_token: Token = None
+        self.current_token: Token | None = None
+        self.peek_token: Token | None = None
 
         self.prefix_parse_fns: dict[TokenType, Callable] = {
             TokenType.IDENT: self.__parse_identifier,
@@ -94,7 +94,7 @@ class Parser:
         self.errors.append(f'No Prefix Parse Function for {tt} found.')
     # endregion
 
-    def parse_program(self) -> None:
+    def parse_program(self) -> Program:
         program: Program = Program()
 
         while self.current_token.type != TokenType.EOF:
@@ -108,7 +108,7 @@ class Parser:
     # region Statement Methods
     def __parse_statement(self) -> Statement:
         if self.current_token.type == TokenType.IDENT and self.__peek_token_is(TokenType.EQ):
-            return self.__parse_assignment_statement();
+            return self.__parse_assignment_statement()
 
         # TODO refactor this, it's utterly retarded
         match self.current_token.type:
@@ -138,24 +138,20 @@ class Parser:
 
         if not self.__expect_peek(TokenType.IDENT):
             raise SyntaxError(f'Expected identifier')
-            return None
 
         stmt.name = IdentifierLiteral(value = self.current_token.literal)
 
         # Syntax Checking
         if not self.__expect_peek(TokenType.COLON):
             raise SyntaxError(f'Variable expects colon.')
-            return None
         
         if not self.__expect_peek(TokenType.TYPE):
             raise SyntaxError(f'Variable expects type.')
-            return None
 
         stmt.value_type = self.current_token.literal
 
         if not self.__expect_peek(TokenType.EQ):
             raise SyntaxError(f'Variable expects initialization on creation.')
-            return None
 
         self.__next_token()
 
@@ -166,7 +162,7 @@ class Parser:
 
         return stmt
 
-    def __parse_function_statement(self) -> FunctionStatement:
+    def __parse_function_statement(self) -> FunctionStatement | None:
         stmt: FunctionStatement = FunctionStatement()
 
         if not self.__expect_peek(TokenType.IDENT):
@@ -194,7 +190,7 @@ class Parser:
 
         return stmt
 
-    def __parse_function_parameters(self) -> list[FunctionParameter]:
+    def __parse_function_parameters(self) -> list[FunctionParameter] | None:
         params: list[FunctionParameter] = []
 
         if self.__peek_token_is(TokenType.RPAREN):
@@ -235,7 +231,7 @@ class Parser:
 
         return params 
 
-    def __parse_return_statement(self) -> ReturnStatement:
+    def __parse_return_statement(self) -> ReturnStatement | None:
         self.__next_token()
 
         return_value = self.__parse_expression(PrecedenceType.P_LOWEST)

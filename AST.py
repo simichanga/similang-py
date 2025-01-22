@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Optional, Union, List
 
+import __imports__
+
 class NodeType(Enum):
     Program = 'Program'
 

@@ -1,5 +1,5 @@
 ; ModuleID = "main"
-target triple = "x86_64-unknown-linux-gnu"
+target triple = "unknown-unknown-unknown"
 target datalayout = ""
 
 declare i32 @"printf"(i8* %".1", ...)
@@ -33,43 +33,24 @@ main_entry:
   %".10" = bitcast [21 x i8]* @"__str_1" to i8*
   %".11" = call i32 (i8*, ...) @"printf"(i8* %".10", i32 %".7")
   %".12" = load i32, i32* %".5"
-  %".13" = icmp eq i32 %".12", 0
-  br i1 %".13", label %"main_entry.if", label %"main_entry.else"
-main_entry.if:
-  %".15" = load i32, i32* %".5"
-  %".16" = icmp slt i32 %".15", 10
-  br i1 %".16", label %"while_loop_entry_2", label %"while_loop_otherwise_2"
-main_entry.else:
-  %".30" = alloca [8 x i8]*
-  store [8 x i8]* @"__str_4", [8 x i8]** %".30"
-  %".32" = bitcast [8 x i8]* @"__str_4" to i8*
-  %".33" = call i32 (i8*, ...) @"printf"(i8* %".32")
-  br label %"main_entry.endif"
-main_entry.endif:
-  %".35" = icmp eq i32 1, 0
-  br i1 %".35", label %"while_loop_entry_5", label %"while_loop_otherwise_5"
+  %".13" = icmp slt i32 %".12", 10
+  br i1 %".13", label %"while_loop_entry_2", label %"while_loop_otherwise_2"
 while_loop_entry_2:
-  %".18" = load i32, i32* %".5"
-  %".19" = alloca [9 x i8]*
-  store [9 x i8]* @"__str_3", [9 x i8]** %".19"
-  %".21" = bitcast [9 x i8]* @"__str_3" to i8*
-  %".22" = call i32 (i8*, ...) @"printf"(i8* %".21", i32 %".18")
+  %".15" = load i32, i32* %".5"
+  %".16" = alloca [9 x i8]*
+  store [9 x i8]* @"__str_3", [9 x i8]** %".16"
+  %".18" = bitcast [9 x i8]* @"__str_3" to i8*
+  %".19" = call i32 (i8*, ...) @"printf"(i8* %".18", i32 %".15")
+  %".20" = load i32, i32* %".5"
+  %".21" = call i32 @"add"(i32 %".20", i32 1)
+  store i32 %".21", i32* %".5"
   %".23" = load i32, i32* %".5"
-  %".24" = call i32 @"add"(i32 %".23", i32 1)
-  store i32 %".24", i32* %".5"
-  %".26" = load i32, i32* %".5"
-  %".27" = icmp slt i32 %".26", 10
-  br i1 %".27", label %"while_loop_entry_2", label %"while_loop_otherwise_2"
+  %".24" = icmp slt i32 %".23", 10
+  br i1 %".24", label %"while_loop_entry_2", label %"while_loop_otherwise_2"
 while_loop_otherwise_2:
-  br label %"main_entry.endif"
-while_loop_entry_5:
-  %".37" = icmp eq i32 1, 0
-  br i1 %".37", label %"while_loop_entry_5", label %"while_loop_otherwise_5"
-while_loop_otherwise_5:
-  %".39" = load i32, i32* %".5"
-  ret i32 %".39"
+  %".26" = load i32, i32* %".5"
+  ret i32 %".26"
 }
 
 @"__str_1" = internal constant [21 x i8] c"a starts off as %i\0a\00\00"
 @"__str_3" = internal constant [9 x i8] c"a = %i\0a\00\00"
-@"__str_4" = internal constant [8 x i8] c"prank\0a\00\00"

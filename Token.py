@@ -78,7 +78,7 @@ KEYWORDS: dict[str, TokenType] = {
     'while': TokenType.WHILE
 }
 
-TYPE_KEYWORDS: list[str] = ['int', 'float', 'str', 'void']
+TYPE_KEYWORDS: list[str] = ['bool', 'int', 'float', 'str', 'void']
 
 def lookup_ident(ident: str) -> TokenType:
     tt: TokenType | None = KEYWORDS.get(ident)
