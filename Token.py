@@ -22,6 +22,10 @@ class TokenType(Enum):
 
     # Assignment Symbols
     EQ = 'EQ'
+    PLUS_EQ = 'PLUS_EQ'
+    MINUS_EQ = 'MINUS_EQ'
+    MUL_EQ = 'MUL_EQ'
+    DIV_EQ = 'DIV_EQ'
 
     # Comparison Symbols
     LT = '<'
@@ -40,6 +44,7 @@ class TokenType(Enum):
     RPAREN = 'RPAREN'
     LBRACE = 'LBRACE'
     RBRACE = 'RBRACE'
+    BANG = 'BANG'
 
     # Keywords
     LET = 'LET'

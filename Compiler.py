@@ -1,3 +1,5 @@
+from typing import List
+
 from llvmlite import ir
 
 from __imports__ import *
@@ -94,6 +96,8 @@ class Compiler:
                 self.__visit_infix_expression(node)
             case NodeType.CallExpression:
                 self.__visit_call_expression(node)
+            case NodeType.PrefixExpression:
+                self.__visit_prefix_expression(node)
 
     
     # region Visit Methods
@@ -181,15 +185,51 @@ class Compiler:
     
     def __visit_assign_statement(self, node: AssignStatement) -> None:
         name: str = node.ident.value
+        operator: str = node.operator
         value: Expression = node.right_value
-
-        value, Type = self.__resolve_value(value)
 
         if self.env.lookup(name) is None:
             self.errors.append(f'COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned') # TODO proper error throwing
-        else:
-            ptr, _ = self.env.lookup(name)
-            self.builder.store(value, ptr)
+            return
+
+        right_value, right_type = self.__resolve_value(value)
+        var_ptr, _ = self.env.lookup(name)
+        orig_value = self.builder.load(var_ptr)
+
+        if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
+            orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+
+        if isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
+            orig_value = self.builder.sitofp(right_value, ir.FloatType())
+
+        value, Type = None, None
+        # TODO refactor this later on
+        match operator:
+            case '=': value = right_value
+            case '+=':
+                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                    value = self.builder.add(orig_value, right_value)
+                else:
+                    value = self.builder.fadd(orig_value, right_value)
+            case '-=':
+                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                    value = self.builder.sub(orig_value, right_value)
+                else:
+                    value = self.builder.fsub(orig_value, right_value)
+            case '*=':
+                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                    value = self.builder.mul(orig_value, right_value)
+                else:
+                    value = self.builder.fmul(orig_value, right_value)
+            case '/=':
+                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                    value = self.builder.sdiv(orig_value, right_value)
+                else:
+                    value = self.builder.fdiv(orig_value, right_value)
+            case _:
+                print('Unsupported assignment operator.')
+        ptr, _ = self.env.lookup(name)
+        self.builder.store(value, ptr)
 
     def __visit_if_statement(self, node: IfStatement) -> None:
         condition = node.condition
@@ -366,6 +406,25 @@ class Compiler:
             ret = self.builder.call(func, args)
 
         return ret, ret_type
+
+    def __visit_prefix_expression(self, node: PrefixExpression) -> tuple[ir.Value, ir.Type]:
+        operator: str = node.operator
+        right_node: Expression = node.right_node
+
+        right_value, right_type = self.__resolve_value(right_node)
+
+        Type, value = None, None
+        if isinstance(right_type, ir.FloatType):
+            Type = ir.FloatType()
+            match operator:
+                case '-': value = self.builder.fmul(right_value, ir.Constant(ir.FloatType(), -1.0))
+                case '!': value = ir.Constant(ir.IntType(1), 0)
+        elif isinstance(right_type, ir.IntType):
+            match operator:
+                case '-': value = self.builder.mul(right_value, ir.Constant(ir.IntType(32), -1))
+                case '!': value = self.builder.not_(right_value)
+
+        return value, Type
     # endregion
 
     # endregion

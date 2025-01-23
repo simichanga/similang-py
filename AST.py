@@ -23,6 +23,7 @@ class NodeType(Enum):
     # Expressions
     InfixExpression = 'InfixExpression'
     CallExpression = 'CallExpression'
+    PrefixExpression = 'PrefixExpression'
 
     # Literals
     IntegerLiteral = 'IntegerLiteral'
@@ -124,9 +125,10 @@ class FunctionStatement(Statement):
         return NodeType.FunctionStatement
 
 class AssignStatement(Statement):
-    def __init__(self, ident: Expression, right_value: Expression) -> None:
+    def __init__(self, ident: Expression, operator: str = "", right_value: Expression = None) -> None:
         self.ident = ident
         self.right_value = right_value
+        self.operator = operator
     
     def type(self) -> NodeType:
         return NodeType.AssignStatement
@@ -211,6 +213,14 @@ class AbstractLiteral(Expression):
     @abstractmethod
     def type(self) -> NodeType:
         self.node_type
+
+class PrefixExpression(Expression):
+    def __init__(self, operator: str, right_node: Expression = None) -> None:
+        self.operator = operator
+        self.right_node = right_node
+
+    def type(self) -> NodeType:
+        return NodeType.PrefixExpression
 
 class IntegerLiteral(AbstractLiteral):
     def type(self) -> NodeType:

@@ -84,18 +84,37 @@ class Lexer:
         # TODO one day I will hopefully refactor this abomination
         match self.current_char:
             case '+':
-                tok = self.__new_token(TokenType.PLUS, self.current_char)
+                if self.__peek_char() == '=':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.PLUS_EQ, ch + self.current_char)
+                else:
+                    tok = self.__new_token(TokenType.PLUS, self.current_char)
             case '-':
                 if self.__peek_char() == '>':
                     ch = self.current_char
                     self.__read_char()
                     tok = self.__new_token(TokenType.ARROW, ch + self.current_char)
+                elif self.__peek_char() == '=':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.MINUS_EQ, ch + self.current_char)
                 else:
                     tok = self.__new_token(TokenType.MINUS, self.current_char)
             case '*':
-                tok = self.__new_token(TokenType.ASTERISK, self.current_char)
+                if self.__peek_char() == '=':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.MUL_EQ, ch + self.current_char)
+                else:
+                    tok = self.__new_token(TokenType.ASTERISK, self.current_char)
             case '/':
-                tok = self.__new_token(TokenType.SLASH, self.current_char)
+                if self.__peek_char() == '=':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.DIV_EQ, ch + self.current_char)
+                else:
+                    tok = self.__new_token(TokenType.SLASH, self.current_char)
             case '^':
                 tok = self.__new_token(TokenType.POW, self.current_char)
             case '%':
@@ -131,8 +150,7 @@ class Lexer:
                     self.__read_char()
                     tok = self.__new_token(TokenType.NOT_EQ, ch + self.current_char)
                 else:
-                    # TODO implement negation
-                    tok = self.__new_token(TokenType.ILLEGAL, self.current_char)
+                    tok = self.__new_token(TokenType.BANG, self.current_char)
             case ':':
                 tok = self.__new_token(TokenType.COLON, self.current_char)
             case ',':

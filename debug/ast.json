@@ -56,17 +56,10 @@
                                 "value": "i"
                             },
                             "right_value": {
-                                "type": "InfixExpression",
-                                "left_node": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "i"
-                                },
-                                "operator": "+",
-                                "right_node": {
-                                    "type": "IntegerLiteral",
-                                    "value": 1
-                                }
-                            }
+                                "type": "IntegerLiteral",
+                                "value": 1
+                            },
+                            "operator": "+="
                         },
                         "body": {
                             "type": "BlockStatement",
@@ -92,33 +85,6 @@
                                             "statements": [
                                                 {
                                                     "type": "BreakStatement"
-                                                }
-                                            ]
-                                        },
-                                        "alternative": null
-                                    }
-                                },
-                                {
-                                    "type": "ExpressionStatement",
-                                    "expr": {
-                                        "type": "IfStatement",
-                                        "condition": {
-                                            "type": "InfixExpression",
-                                            "left_node": {
-                                                "type": "IdentifierLiteral",
-                                                "value": "i"
-                                            },
-                                            "operator": "==",
-                                            "right_node": {
-                                                "type": "IntegerLiteral",
-                                                "value": 2
-                                            }
-                                        },
-                                        "consequence": {
-                                            "type": "BlockStatement",
-                                            "statements": [
-                                                {
-                                                    "type": "ContinueStatement"
                                                 }
                                             ]
                                         },
@@ -154,7 +120,8 @@
                                     "right_value": {
                                         "type": "IdentifierLiteral",
                                         "value": "i"
-                                    }
+                                    },
+                                    "operator": "="
                                 }
                             ]
                         }

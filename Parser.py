@@ -54,6 +54,8 @@ class Parser:
             TokenType.TRUE: self.__parse_boolean,
             TokenType.FALSE: self.__parse_boolean,
             TokenType.STRING: self.__parse_string_literal,
+            TokenType.MINUS: self.__parse_prefix_expression,
+            TokenType.BANG: self.__parse_prefix_expression,
         }
         self.infix_parse_fns: dict[TokenType, Callable] = { tt: self.__parse_infix_expression if tt != TokenType.LPAREN else self.__parse_call_expression for tt in (TokenType) } # TODO ill regret this later on
 
@@ -71,6 +73,16 @@ class Parser:
     def __peek_token_is(self, tt: TokenType) -> bool:
         return self.peek_token.type == tt
     
+    def __peek_token_is_assignment(self) -> bool:
+        assignment_operators: list[TokenType] = [
+            TokenType.EQ,
+            TokenType.PLUS_EQ,
+            TokenType.MINUS_EQ,
+            TokenType.MUL_EQ,
+            TokenType.DIV_EQ,
+        ]
+        return self.peek_token.type in assignment_operators
+
     def __expect_peek(self, tt: TokenType) -> bool:
         if self.__peek_token_is(tt):
             self.__next_token()
@@ -107,7 +119,7 @@ class Parser:
     
     # region Statement Methods
     def __parse_statement(self) -> Statement:
-        if self.current_token.type == TokenType.IDENT and self.__peek_token_is(TokenType.EQ):
+        if self.current_token.type == TokenType.IDENT and self.__peek_token_is_assignment():
             return self.__parse_assignment_statement()
 
         # TODO refactor this, it's utterly retarded
@@ -265,13 +277,15 @@ class Parser:
         ident = IdentifierLiteral(value = self.current_token.literal)
 
         self.__next_token() # skips the IDENT
-        self.__next_token() # skips the =
+
+        operator = self.current_token.literal
+        self.__next_token()
 
         right_value = self.__parse_expression(PrecedenceType.P_LOWEST)
 
         self.__next_token()
 
-        return AssignStatement(ident = ident, right_value = right_value)
+        return AssignStatement(ident = ident, operator = operator, right_value = right_value)
 
     def __parse_if_statement(self) -> IfStatement:
         condition: Expression = None
@@ -418,6 +432,15 @@ class Parser:
             return None
 
         return e_list
+
+    def __parse_prefix_expression(self) -> PrefixExpression:
+        prefix_expr: PrefixExpression = PrefixExpression(operator = self.current_token.literal)
+
+        self.__next_token()
+
+        prefix_expr.right_node = self.__parse_expression(PrecedenceType.P_PREFIX)
+
+        return prefix_expr
     # endregion
 
     # region Prefix Methods
