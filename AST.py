@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Optional, Union, List
+from typing import Any, Optional, List
 
-import __imports__
+from __imports__ import *
 
 class NodeType(Enum):
     Program = 'Program'
@@ -24,6 +24,7 @@ class NodeType(Enum):
     InfixExpression = 'InfixExpression'
     CallExpression = 'CallExpression'
     PrefixExpression = 'PrefixExpression'
+    PostfixExpression = 'PostfixExpression'
 
     # Literals
     IntegerLiteral = 'IntegerLiteral'
@@ -160,7 +161,7 @@ class ForStatement(Statement):
         self,
         var_declaration: LetStatement | None = None,
         condition: Expression | None = None,
-        action: AssignStatement | None = None,
+        action: Expression | None = None,
         body: BlockStatement | None = None
     ) -> None:
         self.var_declaration = var_declaration
@@ -221,6 +222,14 @@ class PrefixExpression(Expression):
 
     def type(self) -> NodeType:
         return NodeType.PrefixExpression
+
+class PostfixExpression(Expression):
+    def __init__(self, left_node: Expression, operator: str) -> None:
+        self.left_node = left_node
+        self.operator = operator
+
+    def type(self) -> NodeType:
+        return NodeType.PostfixExpression
 
 class IntegerLiteral(AbstractLiteral):
     def type(self) -> NodeType:

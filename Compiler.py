@@ -96,8 +96,8 @@ class Compiler:
                 self.__visit_infix_expression(node)
             case NodeType.CallExpression:
                 self.__visit_call_expression(node)
-            case NodeType.PrefixExpression:
-                self.__visit_prefix_expression(node)
+            case NodeType.PostfixExpression:
+                self.__visit_postfix_expression(node)
 
     
     # region Visit Methods
@@ -425,6 +425,31 @@ class Compiler:
                 case '!': value = self.builder.not_(right_value)
 
         return value, Type
+
+    def __visit_postfix_expression(self, node: PostfixExpression) -> None:
+        left_node: IdentifierLiteral = node.left_node # this is an expression but should be an identifier literal
+        operator: str = node.operator
+
+        if self.env.lookup(left_node.value) is None:
+            self.errors.append(f'COMPILE ERROR: Identifier {left_node.value} has not been declared before it was used in a PostfixExpression') # TODO proper error throwing
+
+        var_ptr, _ = self.env.lookup(left_node.value)
+        orig_value = self.builder.load(var_ptr)
+
+        value = None
+        match operator:
+            case '++':
+                if isinstance(orig_value.type, ir.IntType):
+                    value = self.builder.add(orig_value, ir.Constant(ir.IntType(32), 1))
+                elif isinstance(orig_value.type, ir.FloatType):
+                    value = self.builder.fadd(orig_value, ir.Constant(ir.FloatType(), 1.0))
+            case '--':
+                if isinstance(orig_value.type, ir.IntType):
+                    value = self.builder.sub(orig_value, ir.Constant(ir.IntType(32), 1))
+                elif isinstance(orig_value.type, ir.FloatType):
+                    value = self.builder.fsub(orig_value, ir.Constant(ir.FloatType(), 1.0))
+
+        self.builder.store(value, var_ptr)
     # endregion
 
     # endregion
@@ -452,11 +477,13 @@ class Compiler:
                 string, Type = self.__convert_string(node.value)
                 return string, Type
 
-            # Expression Values
+            # Expressions
             case NodeType.InfixExpression:
                 return self.__visit_infix_expression(node)
             case NodeType.CallExpression:
                 return self.__visit_call_expression(node)
+            case NodeType.PostfixExpression:
+                return self.__visit_postfix_expression(node)
 
     def __convert_string(self, string: str) -> tuple[ir.Constant, ir.ArrayType]:
         string = string.replace('\\n', '\n\0')

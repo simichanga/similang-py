@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "python",
+            "name": "MyRunConfig",
+            "file": "main.py",
+            "arguments": []
+        }
+    ]
+}

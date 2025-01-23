@@ -50,16 +50,12 @@
                             }
                         },
                         "action": {
-                            "type": "AssignStatement",
-                            "ident": {
+                            "type": "PostfixExpression",
+                            "left_node": {
                                 "type": "IdentifierLiteral",
                                 "value": "i"
                             },
-                            "right_value": {
-                                "type": "IntegerLiteral",
-                                "value": 1
-                            },
-                            "operator": "+="
+                            "operator": "++"
                         },
                         "body": {
                             "type": "BlockStatement",

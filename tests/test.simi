@@ -1,7 +1,13 @@
+import "math.simi"
+
 fn main() -> int {
     let a: int = 0;
 
-    for (let i: int = 0; i < 10; i += 1) {
+    for (let i: int = 0; i < 10; i++) {
+        if (i == 1) {
+            printf("i + 8: %i\n", add(i, 8));
+        }
+
         if (i == 5) { break; }
 
         printf("i = %i\n", i);

@@ -88,6 +88,10 @@ class Lexer:
                     ch = self.current_char
                     self.__read_char()
                     tok = self.__new_token(TokenType.PLUS_EQ, ch + self.current_char)
+                elif self.__peek_char() == '+':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.PLUS_PLUS, ch + self.current_char)
                 else:
                     tok = self.__new_token(TokenType.PLUS, self.current_char)
             case '-':
@@ -95,6 +99,10 @@ class Lexer:
                     ch = self.current_char
                     self.__read_char()
                     tok = self.__new_token(TokenType.ARROW, ch + self.current_char)
+                elif self.__peek_char() == '-':
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.MINUS_MINUS, ch + self.current_char)
                 elif self.__peek_char() == '=':
                     ch = self.current_char
                     self.__read_char()

@@ -44,7 +44,13 @@ class TokenType(Enum):
     RPAREN = 'RPAREN'
     LBRACE = 'LBRACE'
     RBRACE = 'RBRACE'
+
+    # Prefix Symbols
     BANG = 'BANG'
+
+    # Postfix Symbols
+    PLUS_PLUS = 'PLUS_PLUS'
+    MINUS_MINUS = 'MINUS_MINUS'
 
     # Keywords
     LET = 'LET'

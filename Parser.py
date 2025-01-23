@@ -34,6 +34,9 @@ PRECEDENCES : dict[TokenType, PrecedenceType] = {
     TokenType.GT_EQ: PrecedenceType.P_LESSGREATER,
 
     TokenType.LPAREN: PrecedenceType.P_CALL,
+
+    TokenType.PLUS_PLUS: PrecedenceType.P_INDEX,
+    TokenType.MINUS_MINUS: PrecedenceType.P_INDEX,
 }
 
 class Parser:
@@ -57,7 +60,14 @@ class Parser:
             TokenType.MINUS: self.__parse_prefix_expression,
             TokenType.BANG: self.__parse_prefix_expression,
         }
-        self.infix_parse_fns: dict[TokenType, Callable] = { tt: self.__parse_infix_expression if tt != TokenType.LPAREN else self.__parse_call_expression for tt in (TokenType) } # TODO ill regret this later on
+
+        # Create a base dictionary with default values for all TokenTypes
+        self.infix_parse_fns: dict[TokenType, Callable] = { tt: self.__parse_infix_expression for tt in TokenType }
+
+        # Override specific cases explicitly
+        self.infix_parse_fns[TokenType.LPAREN] = self.__parse_call_expression
+        self.infix_parse_fns[TokenType.PLUS_PLUS] = self.__parse_postfix_expression
+        self.infix_parse_fns[TokenType.MINUS_MINUS] = self.__parse_postfix_expression
 
         self.__next_token()
         self.__next_token()
@@ -347,7 +357,9 @@ class Parser:
 
         self.__next_token() # Skip ;
 
-        stmt.action = self.__parse_assignment_statement()
+        stmt.action = self.__parse_expression(PrecedenceType.P_LOWEST)
+
+        self.__next_token()
 
         if not self.__expect_peek(TokenType.LBRACE):
             return None
@@ -441,6 +453,9 @@ class Parser:
         prefix_expr.right_node = self.__parse_expression(PrecedenceType.P_PREFIX)
 
         return prefix_expr
+
+    def __parse_postfix_expression(self, left_node: Expression) -> PostfixExpression:
+        return PostfixExpression(left_node = left_node, operator = self.current_token.literal)
     # endregion
 
     # region Prefix Methods
