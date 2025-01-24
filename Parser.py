@@ -366,10 +366,8 @@ class Parser:
 
         self.__expect_peek(TokenType.LET)
         var_declaration = self.__parse_let_statement()
-        # CHECKPOINT ALL GOOD UNTIL NOW
 
         # Parse condition
-        # TODO fix this, it nulls out the condition
         if not self.__peek_token_is(TokenType.SEMICOLON):
             self.__next_token()
             condition = self.__parse_expression(PrecedenceType.P_LOWEST)
