@@ -86,8 +86,8 @@
                     {
                         "type": "ReturnStatement",
                         "return_value": {
-                            "type": "IdentifierLiteral",
-                            "value": "a"
+                            "type": "IntegerLiteral",
+                            "value": 0
                         }
                     }
                 ]

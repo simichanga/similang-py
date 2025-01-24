@@ -2,5 +2,5 @@ fn main() -> int {
     for (let i: int = 0; i < 10; i = i + 1) {
         printf("i = %i\n", i);
     }
-    return a;
+    return 0;
 }

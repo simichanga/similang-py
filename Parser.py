@@ -286,7 +286,7 @@ class Parser:
         return block_stmt
 
     def __parse_assignment_statement(self) -> AssignStatement:
-        # Ensure the left-hand side is an identifier
+    # Ensure the left-hand side is an identifier
         ident = IdentifierLiteral(value=self.current_token.literal)
 
         self.__next_token()  # Advance to the operator token
@@ -297,11 +297,10 @@ class Parser:
             TokenType.MUL_EQ, TokenType.DIV_EQ,
         }
         if self.current_token.type not in assignment_operators:
-            raise SyntaxError('Invalid assignment operator')
-            # raise SyntaxError(
-            #     f"Invalid assignment operator '{self.current_token.literal}' "
-            #     f"at line {self.current_token.line}, column {self.current_token.column}."
-            # )
+            raise SyntaxError(
+                f"Invalid assignment operator '{self.current_token.literal}' "
+                f"at line {self.current_token.line_no}."
+            )
 
         operator = self.current_token.literal
         self.__next_token()  # Advance to the right-hand side expression
@@ -309,16 +308,18 @@ class Parser:
         # Parse the right-hand side expression
         right_value = self.__parse_expression(PrecedenceType.P_LOWEST)
 
+        # print(f'Debug Assign Statement: {ident=}, {operator=}, {right_value}')
+        # print(f'Current Token: {self.current_token}')
+
         # Ensure the statement ends with a semicolon
         # if not self.__current_token_is(TokenType.SEMICOLON):
-            # raise SyntaxError(
-            #     f"Expected ';' after assignment statement, got '{self.current_token.literal}' "
-            #     f"at line {self.current_token.line}, column {self.current_token.column}."
-            # )
+        #     raise SyntaxError(
+        #         f"Expected ';' after assignment statement, got '{self.current_token.literal}' "
+        #         f"at line {self.current_token.line_no}."
+        #     )
 
         # Construct and return the assignment statement
-        return AssignStatement(ident = ident, operator = operator, right_value = right_value)
-
+        return AssignStatement(ident=ident, operator=operator, right_value=right_value)
 
     def __parse_if_statement(self) -> IfStatement:
         condition: Expression = None
