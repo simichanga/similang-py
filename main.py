@@ -2,6 +2,7 @@ from Lexer import Lexer
 from Parser import Parser
 from Compiler import Compiler
 from AST import Program
+from optimizer.Optimizer import Optimizer
 
 from pipeline.lexer_debugger import debug_lexer
 from pipeline.parser_debugger import debug_parser
@@ -24,13 +25,15 @@ if __name__ == '__main__':
     if Config.LEXER_DEBUG:
         debug_lexer(code)
 
-    program: Program = parser.parse_program()
+    ast: Program = parser.parse_program()
+
+    ast: Optimizer = Optimizer.optimize(ast)
 
     if Config.PARSER_DEBUG:
-        debug_parser(parser, program)
+        debug_parser(parser, ast)
 
     compiler: Compiler = Compiler()
-    compiler.compile(node=program)
+    compiler.compile(node = ast)
     module = compiler.module
 
     if Config.COMPILER_DEBUG:

@@ -98,7 +98,6 @@ class Compiler:
                 self.__visit_call_expression(node)
             case NodeType.PostfixExpression:
                 self.__visit_postfix_expression(node)
-
     
     # region Visit Methods
     def __visit_program(self, node: Program) -> None:
