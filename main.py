@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     ast: Program = parser.parse_program()
 
-    ast: Optimizer = Optimizer.optimize(ast)
+    # ast: Optimizer = Optimizer.optimize(ast)
 
     if Config.PARSER_DEBUG:
         debug_parser(parser, ast)

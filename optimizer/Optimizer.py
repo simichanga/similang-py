@@ -24,6 +24,7 @@ class Optimizer:
         """
         # TODO refactor all this bullshit, rn tho I'm happy it works
         # TODO implement prefix folding too
+        # TODO implement constant folding for known at compile time variables
 
         if isinstance(node.left_node, InfixExpression):
             left = Optimizer.__fold_constants(node.left_node).value
