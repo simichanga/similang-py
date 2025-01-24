@@ -286,18 +286,39 @@ class Parser:
         return block_stmt
 
     def __parse_assignment_statement(self) -> AssignStatement:
-        ident = IdentifierLiteral(value = self.current_token.literal)
+        # Ensure the left-hand side is an identifier
+        ident = IdentifierLiteral(value=self.current_token.literal)
 
-        self.__next_token() # skips the IDENT
+        self.__next_token()  # Advance to the operator token
+
+        # Validate that the current token is a valid assignment operator
+        assignment_operators = {
+            TokenType.EQ, TokenType.PLUS_EQ, TokenType.MINUS_EQ,
+            TokenType.MUL_EQ, TokenType.DIV_EQ,
+        }
+        if self.current_token.type not in assignment_operators:
+            raise SyntaxError('Invalid assignment operator')
+            # raise SyntaxError(
+            #     f"Invalid assignment operator '{self.current_token.literal}' "
+            #     f"at line {self.current_token.line}, column {self.current_token.column}."
+            # )
 
         operator = self.current_token.literal
-        self.__next_token()
+        self.__next_token()  # Advance to the right-hand side expression
 
+        # Parse the right-hand side expression
         right_value = self.__parse_expression(PrecedenceType.P_LOWEST)
 
-        self.__next_token()
+        # Ensure the statement ends with a semicolon
+        # if not self.__current_token_is(TokenType.SEMICOLON):
+            # raise SyntaxError(
+            #     f"Expected ';' after assignment statement, got '{self.current_token.literal}' "
+            #     f"at line {self.current_token.line}, column {self.current_token.column}."
+            # )
 
+        # Construct and return the assignment statement
         return AssignStatement(ident = ident, operator = operator, right_value = right_value)
+
 
     def __parse_if_statement(self) -> IfStatement:
         condition: Expression = None
@@ -355,7 +376,9 @@ class Parser:
             condition = None
 
         # Parse action
-        self.__expect_peek(TokenType.SEMICOLON)
+        self.__next_token()
+        self.__next_token()
+
         action = self.__parse_assignment_statement()  # Ensure this handles `AssignStatement` or `InfixExpression`
 
         # Parse body

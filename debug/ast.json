@@ -41,21 +41,25 @@
                             "type": "AssignStatement",
                             "ident": {
                                 "type": "IdentifierLiteral",
-                                "value": ";"
+                                "value": "i"
                             },
-                            "right_value": null,
-                            "operator": "i"
+                            "right_value": {
+                                "type": "InfixExpression",
+                                "left_node": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "i"
+                                },
+                                "operator": "+",
+                                "right_node": {
+                                    "type": "IntegerLiteral",
+                                    "value": 1
+                                }
+                            },
+                            "operator": "="
                         },
                         "body": {
                             "type": "BlockStatement",
                             "statements": [
-                                {
-                                    "type": "ExpressionStatement",
-                                    "expr": {
-                                        "type": "IntegerLiteral",
-                                        "value": 1
-                                    }
-                                },
                                 {
                                     "type": "ExpressionStatement",
                                     "expr": {
