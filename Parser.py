@@ -344,14 +344,19 @@ class Parser:
 
         self.__expect_peek(TokenType.LET)
         var_declaration = self.__parse_let_statement()
+        # CHECKPOINT ALL GOOD UNTIL NOW
 
         # Parse condition
-        self.__expect_peek(TokenType.SEMICOLON)
-        condition = self.__parse_expression(PrecedenceType.P_LOWEST)
+        # TODO fix this, it nulls out the condition
+        if not self.__peek_token_is(TokenType.SEMICOLON):
+            self.__next_token()
+            condition = self.__parse_expression(PrecedenceType.P_LOWEST)
+        else:
+            condition = None
 
         # Parse action
         self.__expect_peek(TokenType.SEMICOLON)
-        action = self.__parse_expression(PrecedenceType.P_LOWEST)  # Ensure this handles `AssignStatement` or `InfixExpression`
+        action = self.__parse_assignment_statement()  # Ensure this handles `AssignStatement` or `InfixExpression`
 
         # Parse body
         self.__expect_peek(TokenType.LBRACE)
