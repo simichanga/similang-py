@@ -1,7 +1,16 @@
-from AST import Node, NodeType
-from AST import Statement, Expression, Program
-from AST import ExpressionStatement, LetStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, IfStatement
-from AST import WhileStatement, ForStatement, BreakStatement, ContinueStatement
-from AST import InfixExpression, PrefixExpression, PostfixExpression, CallExpression
-from AST import IntegerLiteral, FloatLiteral, IdentifierLiteral, BooleanLiteral, StringLiteral
-from AST import FunctionParameter
+"""
+Centralized imports for the SimiLang compiler.
+This file helps avoid circular dependencies and organizes imports.
+"""
+
+# AST Nodes
+from AST import (
+    Node, NodeType,
+    Statement, Expression, Program,
+    ExpressionStatement, LetStatement, FunctionStatement, ReturnStatement,
+    BlockStatement, AssignStatement, IfStatement, WhileStatement, ForStatement,
+    BreakStatement, ContinueStatement,
+    InfixExpression, PrefixExpression, PostfixExpression, CallExpression,
+    IntegerLiteral, FloatLiteral, IdentifierLiteral, BooleanLiteral, StringLiteral,
+    FunctionParameter
+)
