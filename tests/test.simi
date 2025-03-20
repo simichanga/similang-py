@@ -1,6 +1,8 @@
 fn main() -> int {
-    for (let i: int = 0; i < 10; i = i + 1) {
-        printf("i = %i\n", i);
+    let sum: int = 0;
+    for (let i: int = 0; i < 100000; i += 1) {
+        sum = sum + i;
     }
+    printf("Sum = %i\n", sum);
     return 0;
 }
