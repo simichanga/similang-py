@@ -42,9 +42,7 @@ PRECEDENCES : dict[TokenType, PrecedenceType] = {
 class Parser:
     def __init__(self, lexer: Lexer) -> None:
         self.lexer: Lexer = lexer
-
         self.errors: list[str] = []
-
         self.current_token: Token | None = None
         self.peek_token: Token | None = None
 
@@ -63,22 +61,24 @@ class Parser:
 
         # Create a base dictionary with default values for all TokenTypes
         self.infix_parse_fns: dict[TokenType, Callable] = { tt: self.__parse_infix_expression for tt in TokenType }
-
         # Override specific cases explicitly
         self.infix_parse_fns[TokenType.LPAREN] = self.__parse_call_expression
         self.infix_parse_fns[TokenType.PLUS_PLUS] = self.__parse_postfix_expression
         self.infix_parse_fns[TokenType.MINUS_MINUS] = self.__parse_postfix_expression
 
-        self.__next_token()
-        self.__next_token()
+        self.__next_token() # Initialize current_token
+        self.__next_token() # Initialize peek_token
 
     # region Parser Helpers
     def __next_token(self) -> None:
+        """Advance to the next token."""
         self.current_token = self.peek_token
         self.peek_token = self.lexer.next_token()
+        print(f"Current Token: {self.current_token}")  # Debug statement
+        print(f"Peek Token: {self.peek_token}")  # Debug statement
 
     def __current_token_is(self, tt: TokenType) -> bool:
-        return self.current_token.type == tt 
+        return self.current_token.type == tt
 
     def __peek_token_is(self, tt: TokenType) -> bool:
         return self.peek_token.type == tt
@@ -158,7 +158,7 @@ class Parser:
 
         if self.__peek_token_is(TokenType.SEMICOLON):
             self.__next_token()
-        
+
         return ExpressionStatement(expr=expr)
 
     # TODO refactor this so it has proper error checking
@@ -259,7 +259,7 @@ class Parser:
         if not self.__expect_peek(TokenType.RPAREN):
             return None
 
-        return params 
+        return params
 
     def __parse_return_statement(self) -> ReturnStatement | None:
         self.__next_token()

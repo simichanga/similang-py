@@ -15,77 +15,33 @@
                         "type": "LetStatement",
                         "name": {
                             "type": "IdentifierLiteral",
-                            "value": "sum"
+                            "value": "name"
                         },
                         "value": {
-                            "type": "IntegerLiteral",
-                            "value": 0
+                            "type": "StringLiteral",
+                            "value": "John"
                         },
-                        "value_type": "int"
+                        "value_type": "str"
                     },
                     {
-                        "type": "ForStatement",
-                        "var_declaration": {
-                            "type": "LetStatement",
-                            "name": {
-                                "type": "IdentifierLiteral",
-                                "value": "i"
-                            },
-                            "value": {
-                                "type": "IntegerLiteral",
-                                "value": 0
-                            },
-                            "value_type": "int"
+                        "type": "LetStatement",
+                        "name": {
+                            "type": "IdentifierLiteral",
+                            "value": "age"
                         },
-                        "condition": {
+                        "value": {
                             "type": "InfixExpression",
                             "left_node": {
-                                "type": "IdentifierLiteral",
-                                "value": "i"
+                                "type": "IntegerLiteral",
+                                "value": 18
                             },
-                            "operator": "<",
+                            "operator": "+",
                             "right_node": {
                                 "type": "IntegerLiteral",
-                                "value": 100000
+                                "value": 5
                             }
                         },
-                        "action": {
-                            "type": "AssignStatement",
-                            "ident": {
-                                "type": "IdentifierLiteral",
-                                "value": "i"
-                            },
-                            "right_value": {
-                                "type": "IntegerLiteral",
-                                "value": 1
-                            },
-                            "operator": "+="
-                        },
-                        "body": {
-                            "type": "BlockStatement",
-                            "statements": [
-                                {
-                                    "type": "AssignStatement",
-                                    "ident": {
-                                        "type": "IdentifierLiteral",
-                                        "value": "sum"
-                                    },
-                                    "right_value": {
-                                        "type": "InfixExpression",
-                                        "left_node": {
-                                            "type": "IdentifierLiteral",
-                                            "value": "sum"
-                                        },
-                                        "operator": "+",
-                                        "right_node": {
-                                            "type": "IdentifierLiteral",
-                                            "value": "i"
-                                        }
-                                    },
-                                    "operator": "="
-                                }
-                            ]
-                        }
+                        "value_type": "int"
                     },
                     {
                         "type": "ExpressionStatement",
@@ -98,11 +54,15 @@
                             "arguments": [
                                 {
                                     "type": "StringLiteral",
-                                    "value": "Sum = %i\\n"
+                                    "value": "%s is %i years old."
                                 },
                                 {
                                     "type": "IdentifierLiteral",
-                                    "value": "sum"
+                                    "value": "name"
+                                },
+                                {
+                                    "type": "IdentifierLiteral",
+                                    "value": "age"
                                 }
                             ]
                         }

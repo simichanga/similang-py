@@ -1,8 +1,8 @@
 fn main() -> int {
-    let sum: int = 0;
-    for (let i: int = 0; i < 100000; i += 1) {
-        sum = sum + i;
-    }
-    printf("Sum = %i\n", sum);
+    /* Program
+    Cringe */
+    let name: str = "John";
+    let age: int = 18 + 5;
+    printf("%s is %i years old.", name, age);
     return 0;
 }

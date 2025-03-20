@@ -18,7 +18,7 @@ class NodeType(Enum):
     WhileStatement = 'WhileStatement'
     ForStatement = 'ForStatement'
     BreakStatement = 'BreakStatement'
-    ContinueStatement = 'ContinueStatement' 
+    ContinueStatement = 'ContinueStatement'
 
     # Expressions
     InfixExpression = 'InfixExpression'
@@ -130,7 +130,7 @@ class AssignStatement(Statement):
         self.ident = ident
         self.right_value = right_value
         self.operator = operator
-    
+
     def type(self) -> NodeType:
         return NodeType.AssignStatement
 
@@ -196,7 +196,7 @@ class InfixExpression(Expression):
 
     def type(self) -> NodeType:
         return NodeType.InfixExpression
-        
+
 class CallExpression(Expression):
     def __init__(self, function: Expression = None, arguments: Optional[List[Expression]] = None) -> None:
         self.function = function

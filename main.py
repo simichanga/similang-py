@@ -1,4 +1,5 @@
 from Lexer import Lexer
+# from src.lexer.lexer import Lexer
 from Parser import Parser
 from Compiler import Compiler
 from AST import Program
