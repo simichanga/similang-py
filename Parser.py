@@ -74,8 +74,6 @@ class Parser:
         """Advance to the next token."""
         self.current_token = self.peek_token
         self.peek_token = self.lexer.next_token()
-        print(f"Current Token: {self.current_token}")  # Debug statement
-        print(f"Peek Token: {self.peek_token}")  # Debug statement
 
     def __current_token_is(self, tt: TokenType) -> bool:
         return self.current_token.type == tt

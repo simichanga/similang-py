@@ -55,7 +55,7 @@ def main():
         debug_lexer(code)
 
     # Parse program
-    ast: Program = benchmark_stage("Parsing", parser.parse_program)
+    ast: Program = benchmark_stage("AST", parser.parse_program)
 
     if Config.PARSER_DEBUG:
         debug_parser(parser, ast)
