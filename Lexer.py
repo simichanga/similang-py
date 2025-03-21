@@ -54,7 +54,7 @@ class Lexer:
 
     def __new_token(self, tt: TokenType, literal: Any) -> Token:
         """ Creates a new token with the current position and line number. """
-        return Token(type = tt, literal = literal, line_no = self.line_no, position = self.position)
+        return Token(type_= tt, literal = literal, line_no = self.line_no, position = self.position)
 
     @staticmethod
     def __is_digit(ch: str) -> bool:

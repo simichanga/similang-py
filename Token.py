@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, Optional, Set, Union
 
 class TokenType(Enum):
     # Special Tokens
@@ -69,8 +69,16 @@ class TokenType(Enum):
     TYPE = 'TYPE'
 
 class Token:
-    def __init__(self, type: TokenType, literal: Any, line_no: int, position: int) -> None:
-        self.type = type
+    def __init__(self, type_: TokenType, literal: Union[int, float, str], line_no: int, position: int) -> None:
+        """
+        Initialize Token object.
+
+        :param type_: TokenType enum value, representing the token type.
+        :param literal: The literal value of the token, can be int, float, or str.
+        :param line_no: The line number where the token is located.
+        :param position: The position of the token within the line.
+        """
+        self.type = type_
         self.literal = literal
         self.line_no = line_no
         self.position = position
@@ -81,7 +89,7 @@ class Token:
     def __repr__(self) -> str:
         return str(self)
 
-KEYWORDS: dict[str, TokenType] = {
+KEYWORDS: Dict[str, TokenType] = {
     'let': TokenType.LET,
     'fn': TokenType.FN,
     'return': TokenType.RETURN,
@@ -95,14 +103,26 @@ KEYWORDS: dict[str, TokenType] = {
     'break': TokenType.BREAK,
 }
 
-TYPE_KEYWORDS: list[str] = ['bool', 'int', 'float', 'str', 'void']
+TYPE_KEYWORDS: Set[str] = {'bool', 'int', 'float', 'str', 'void'}
+
 
 def lookup_ident(ident: str) -> TokenType:
-    tt: TokenType | None = KEYWORDS.get(ident)
-    if tt is not None:
+    """
+    Look up the corresponding TokenType for an identifier.
+
+    :param ident: Identifier string.
+    :return: Corresponding TokenType enum value.
+    """
+    if not isinstance(ident, str):
+        raise TypeError("Input must be a string")
+
+    # Check if it's a keyword
+    if tt := KEYWORDS.get(ident):
         return tt
-    
+
+    # Check if it's a type keyword
     if ident in TYPE_KEYWORDS:
         return TokenType.TYPE
-    
+
+    # Default return identifier type
     return TokenType.IDENT
