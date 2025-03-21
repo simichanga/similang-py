@@ -1,6 +1,7 @@
 from Token import Token, TokenType, lookup_ident
 from typing import Any
 
+
 class Lexer:
     def __init__(self, source: str) -> None:
         self.source = source
@@ -55,12 +56,14 @@ class Lexer:
         """ Creates a new token with the current position and line number. """
         return Token(type = tt, literal = literal, line_no = self.line_no, position = self.position)
 
-    def __is_digit(self, ch: str) -> bool:
-        return '0' <= ch and ch <= '9'
+    @staticmethod
+    def __is_digit(ch: str) -> bool:
+        return '0' <= ch <= '9'
 
-    def __is_letter(self, ch: str) -> bool:
-        return 'a' <= ch and ch <= 'z' \
-            or 'A' <= ch and ch <= 'Z' \
+    @staticmethod
+    def __is_letter(ch: str) -> bool:
+        return 'a' <= ch <= 'z' \
+            or 'A' <= ch <= 'Z' \
             or ch == '_'
 
     def __read_number(self) -> Token:

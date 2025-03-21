@@ -3,7 +3,7 @@ from Lexer import Lexer
 from Parser import Parser
 from Compiler import Compiler
 from AST import Program
-from optimizer.Optimizer import Optimizer
+# from optimizer.Optimizer import Optimizer
 
 from pipeline.lexer_debugger import debug_lexer
 from pipeline.parser_debugger import debug_parser
