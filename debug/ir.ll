@@ -6,7 +6,7 @@ declare i32 @"printf"(i8* %".1", ...)
 
 @"true" = constant i1 1
 @"false" = constant i1 0
-define float @"main"()
+define i32 @"main"()
 {
 main_entry:
   %".2" = alloca [5 x i8]*
@@ -30,10 +30,7 @@ main_entry:
   store [31 x i8]* @"__str_2", [31 x i8]** %".19"
   %".21" = bitcast [31 x i8]* @"__str_2" to i8*
   %".22" = call i32 (i8*, ...) @"printf"(i8* %".21", [5 x i8]* %".16", i32 %".17", float %".18")
-  %".23" = load float, float* %".14"
-  %".24" = sitofp i32 2 to float
-  %".25" = fsub float %".23", %".24"
-  ret float %".25"
+  ret i32 0
 }
 
 @"__str_1" = internal constant [5 x i8] c"John\00"

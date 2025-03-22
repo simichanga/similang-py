@@ -186,6 +186,16 @@ class Compiler:
 
         self.compile(body)
 
+        if name == 'main' and not self.builder.block.is_terminated:
+            if return_type == ir.IntType(32):
+                self.builder.ret(ir.Constant(ir.IntType(32), 0))
+            elif return_type == ir.FloatType():
+                self.builder.ret(ir.Constant(ir.FloatType(), 0))
+            elif return_type == ir.VoidType():
+                self.builder.ret_void()
+            else:
+                raise TypeError(f"Unsupported return type for main: {return_type}")
+
         # Set everything back to normal after it's compiled
         self.env = previous_env
         self.env.define(name, func, return_type)

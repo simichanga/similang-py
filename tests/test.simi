@@ -1,4 +1,4 @@
-fn main() -> float {
+fn main() -> int {
 
     let name: str = "John";
     let age: int = (1 + 2*3 + 4) * 2;
@@ -8,5 +8,4 @@ fn main() -> float {
 
     printf("%s is %d years old.\n num is %f", name, age, num);
 
-    return num - 2;
 }
