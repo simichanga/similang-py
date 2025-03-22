@@ -186,6 +186,7 @@ class Compiler:
 
         self.compile(body)
 
+        # Set default return type for main
         if name == 'main' and not self.builder.block.is_terminated:
             if return_type == ir.IntType(32):
                 self.builder.ret(ir.Constant(ir.IntType(32), 0))
@@ -201,7 +202,7 @@ class Compiler:
         self.env.define(name, func, return_type)
 
         self.builder = previous_builder
-    
+
     def __visit_assign_statement(self, node: AssignStatement) -> None:
         name: str = node.ident.value
         operator: str = node.operator
@@ -532,7 +533,7 @@ class Compiler:
         global_fmt.initializer = c_fmt
 
         return global_fmt, global_fmt.type
-    
+
     def builtin_printf(self, params: list[ir.Instruction], return_type: ir.Type) -> None:
         func, _ = self.env.lookup('printf')
 
