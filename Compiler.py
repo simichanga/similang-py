@@ -27,10 +27,10 @@ class Compiler:
 
         self.errors: list[str] = []
 
-        self.__initialize_builtins()
-
         self.breakpoints: List[ir.Block] = []
         self.continues: List[ir.Block] = []
+
+        self.__initialize_builtins()
 
     def __initialize_builtins(self) -> None:
         def __init_print() -> ir.Function:
@@ -98,7 +98,7 @@ class Compiler:
                 self.__visit_call_expression(node)
             case NodeType.PostfixExpression:
                 self.__visit_postfix_expression(node)
-    
+
     # region Visit Methods
     def __visit_program(self, node: Program) -> None:
         for stmt in node.statements:
@@ -136,10 +136,17 @@ class Compiler:
             self.compile(stmt)
 
     def __visit_return_statement(self, node: ReturnStatement) -> None:
-        value: Expression = node.return_value
-        value, Type = self.__resolve_value(value)
+        return_value, return_type = self.__resolve_value(node.return_value)
 
-        self.builder.ret(value)
+        # Ensure the return type matches the function's return type
+        if isinstance(return_type, ir.FloatType) and self.type_map['float'] != return_type:
+            return_value = self.builder.sitofp(return_value, ir.FloatType())
+            return_type = self.type_map['float']
+        elif isinstance(return_type, ir.IntType) and self.type_map['int'] != return_type:
+            return_value = self.builder.sitofp(return_value, ir.FloatType())
+            return_type = self.type_map['float']
+
+        self.builder.ret(return_value)
 
     def __visit_function_statement(self, node: FunctionStatement) -> None:
         name: str = node.name.value
@@ -191,47 +198,62 @@ class Compiler:
         value: Expression = node.right_value
 
         if self.env.lookup(name) is None:
-            self.errors.append(f'COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned') # TODO proper error throwing
+            self.errors.append(f'COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned')
             return
 
         right_value, right_type = self.__resolve_value(value)
         var_ptr, _ = self.env.lookup(name)
         orig_value = self.builder.load(var_ptr)
 
-        if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
-            orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+        # Handle assignment operators
+        if operator == '=':
+            value = right_value
+        elif operator == '+=':
+            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                value = self.builder.add(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.FloatType):
+                value = self.builder.fadd(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
+                right_value = self.builder.sitofp(right_value, ir.FloatType())
+                value = self.builder.fadd(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
+                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+                value = self.builder.fadd(orig_value, right_value)
+        elif operator == '-=':
+            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                value = self.builder.sub(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.FloatType):
+                value = self.builder.fsub(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
+                right_value = self.builder.sitofp(right_value, ir.FloatType())
+                value = self.builder.fsub(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
+                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+                value = self.builder.fsub(orig_value, right_value)
+        elif operator == '*=':
+            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                value = self.builder.mul(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.FloatType):
+                value = self.builder.fmul(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
+                right_value = self.builder.sitofp(right_value, ir.FloatType())
+                value = self.builder.fmul(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
+                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+                value = self.builder.fmul(orig_value, right_value)
+        elif operator == '/=':
+            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                value = self.builder.sdiv(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.FloatType):
+                value = self.builder.fdiv(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
+                right_value = self.builder.sitofp(right_value, ir.FloatType())
+                value = self.builder.fdiv(orig_value, right_value)
+            elif isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
+                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+                value = self.builder.fdiv(orig_value, right_value)
 
-        if isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
-            orig_value = self.builder.sitofp(right_value, ir.FloatType())
-
-        value, Type = None, None
-        # TODO refactor this later on
-        match operator:
-            case '=': value = right_value
-            case '+=':
-                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                    value = self.builder.add(orig_value, right_value)
-                else:
-                    value = self.builder.fadd(orig_value, right_value)
-            case '-=':
-                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                    value = self.builder.sub(orig_value, right_value)
-                else:
-                    value = self.builder.fsub(orig_value, right_value)
-            case '*=':
-                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                    value = self.builder.mul(orig_value, right_value)
-                else:
-                    value = self.builder.fmul(orig_value, right_value)
-            case '/=':
-                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                    value = self.builder.sdiv(orig_value, right_value)
-                else:
-                    value = self.builder.fdiv(orig_value, right_value)
-            case _:
-                print('Unsupported assignment operator.')
-        ptr, _ = self.env.lookup(name)
-        self.builder.store(value, ptr)
+        self.builder.store(value, var_ptr)
 
     def __visit_if_statement(self, node: IfStatement) -> None:
         condition = node.condition
@@ -315,7 +337,8 @@ class Compiler:
         if isinstance(left_type, ir.IntType) and left_type.width == 1:  # i1 (bool)
             left_value = self.builder.zext(left_value, ir.IntType(32))  # Zero-extend to i32
             left_type = ir.IntType(32)
-        elif isinstance(left_type, ir.FloatType) and isinstance(left_value, ir.IntType) and left_type.width == 1:  # i1 (bool)
+        elif isinstance(left_type, ir.FloatType) and isinstance(left_value,
+                                                                ir.IntType) and left_type.width == 1:  # i1 (bool)
             left_value = self.builder.zext(left_value, ir.IntType(32))  # Zero-extend to i32, then convert to float
             left_value = self.builder.sitofp(left_value, ir.FloatType())
             left_type = ir.FloatType()
@@ -323,7 +346,8 @@ class Compiler:
         if isinstance(right_type, ir.IntType) and right_type.width == 1:  # i1 (bool)
             right_value = self.builder.zext(right_value, ir.IntType(32))  # Zero-extend to i32
             right_type = ir.IntType(32)
-        elif isinstance(right_type, ir.FloatType) and isinstance(right_value, ir.IntType) and right_type.width == 1:  # i1 (bool)
+        elif isinstance(right_type, ir.FloatType) and isinstance(right_value,
+                                                                 ir.IntType) and right_type.width == 1:  # i1 (bool)
             right_value = self.builder.zext(right_value, ir.IntType(32))  # Zero-extend to i32, then convert to float
             right_value = self.builder.sitofp(right_value, ir.FloatType())
             right_type = ir.FloatType()
@@ -345,7 +369,7 @@ class Compiler:
 
         # Handle floating-point operations
         elif isinstance(left_type, ir.FloatType) and isinstance(right_type, ir.FloatType):
-            result_type = ir.FloatType()
+            result_type = self.type_map['float']
             value = self.__process_float_operations(operator, left_value, right_value)
 
         # Error if types are incompatible
@@ -383,7 +407,6 @@ class Compiler:
             case '==': return self.builder.fcmp_ordered('==', left_value, right_value)
             case '!=': return self.builder.fcmp_ordered('!=', left_value, right_value)
             case _: raise ValueError(f"Unsupported operator for floats: {operator}")
-
 
     def __visit_call_expression(self, node: CallExpression) -> tuple[ir.Value, ir.Type]:
         name: str = node.function.value
@@ -457,15 +480,15 @@ class Compiler:
     # endregion
 
     # region Helper Methods
-    def __resolve_value(self, node: Expression) -> Optional[Tuple[ir.Value, ir.Type]]: # TODO implement value_type parameter
+    def __resolve_value(self, node: Expression) -> Optional[Tuple[ir.Value, ir.Type]]:
         match node.type():
             case NodeType.IntegerLiteral:
                 node: IntegerLiteral = node
-                value, Type = node.value, self.type_map['int'] # value type checking here
+                value, Type = node.value, self.type_map['int']
                 return ir.Constant(Type, value), Type
             case NodeType.FloatLiteral:
                 node: FloatLiteral = node
-                value, Type = node.value, self.type_map['float'] # value type checking here
+                value, Type = node.value, self.type_map['float']
                 return ir.Constant(Type, value), Type
             case NodeType.IdentifierLiteral:
                 node: IdentifierLiteral = node
@@ -473,7 +496,7 @@ class Compiler:
                 return self.builder.load(ptr), Type
             case NodeType.BooleanLiteral:
                 node: BooleanLiteral = node
-                return ir.Constant(ir.IntType(1), 1 if node.value else 0), ir.IntType(1) # Ensure i1 type for boolean
+                return ir.Constant(ir.IntType(1), 1 if node.value else 0), ir.IntType(1)
             case NodeType.StringLiteral:
                 node: StringLiteral = node
                 string, Type = self.__convert_string(node.value)

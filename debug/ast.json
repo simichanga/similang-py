@@ -15,11 +15,55 @@
                         "type": "LetStatement",
                         "name": {
                             "type": "IdentifierLiteral",
-                            "value": "num"
+                            "value": "name"
                         },
                         "value": {
-                            "type": "IntegerLiteral",
-                            "value": 10
+                            "type": "StringLiteral",
+                            "value": "John"
+                        },
+                        "value_type": "str"
+                    },
+                    {
+                        "type": "LetStatement",
+                        "name": {
+                            "type": "IdentifierLiteral",
+                            "value": "age"
+                        },
+                        "value": {
+                            "type": "InfixExpression",
+                            "left_node": {
+                                "type": "InfixExpression",
+                                "left_node": {
+                                    "type": "InfixExpression",
+                                    "left_node": {
+                                        "type": "IntegerLiteral",
+                                        "value": 1
+                                    },
+                                    "operator": "+",
+                                    "right_node": {
+                                        "type": "InfixExpression",
+                                        "left_node": {
+                                            "type": "IntegerLiteral",
+                                            "value": 2
+                                        },
+                                        "operator": "*",
+                                        "right_node": {
+                                            "type": "IntegerLiteral",
+                                            "value": 3
+                                        }
+                                    }
+                                },
+                                "operator": "+",
+                                "right_node": {
+                                    "type": "IntegerLiteral",
+                                    "value": 4
+                                }
+                            },
+                            "operator": "*",
+                            "right_node": {
+                                "type": "IntegerLiteral",
+                                "value": 2
+                            }
                         },
                         "value_type": "int"
                     },
@@ -27,24 +71,80 @@
                         "type": "AssignStatement",
                         "ident": {
                             "type": "IdentifierLiteral",
-                            "value": "num"
+                            "value": "age"
                         },
                         "right_value": {
                             "type": "IntegerLiteral",
-                            "value": 5
+                            "value": 2
                         },
                         "operator": "+="
                     },
                     {
-                        "type": "ReturnStatement",
-                        "return_value": {
+                        "type": "LetStatement",
+                        "name": {
                             "type": "IdentifierLiteral",
                             "value": "num"
+                        },
+                        "value": {
+                            "type": "InfixExpression",
+                            "left_node": {
+                                "type": "FloatLiteral",
+                                "value": 1.2
+                            },
+                            "operator": "+",
+                            "right_node": {
+                                "type": "FloatLiteral",
+                                "value": 2.3
+                            }
+                        },
+                        "value_type": "float"
+                    },
+                    {
+                        "type": "ExpressionStatement",
+                        "expr": {
+                            "type": "CallExpression",
+                            "function": {
+                                "type": "IdentifierLiteral",
+                                "value": "printf"
+                            },
+                            "arguments": [
+                                {
+                                    "type": "StringLiteral",
+                                    "value": "%s is %d years old.\n num is %f"
+                                },
+                                {
+                                    "type": "IdentifierLiteral",
+                                    "value": "name"
+                                },
+                                {
+                                    "type": "IdentifierLiteral",
+                                    "value": "age"
+                                },
+                                {
+                                    "type": "IdentifierLiteral",
+                                    "value": "num"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "type": "ReturnStatement",
+                        "return_value": {
+                            "type": "InfixExpression",
+                            "left_node": {
+                                "type": "IdentifierLiteral",
+                                "value": "num"
+                            },
+                            "operator": "-",
+                            "right_node": {
+                                "type": "IntegerLiteral",
+                                "value": 2
+                            }
                         }
                     }
                 ]
             },
-            "return_type": "int"
+            "return_type": "float"
         }
     ]
 }

@@ -141,7 +141,6 @@ class Parser:
         if self.current_token.type == TokenType.IDENT and self.__peek_token_is_assignment():
             return self.__parse_assignment_statement()
 
-        # TODO refactor this, it's utterly retarded
         match self.current_token.type:
             case TokenType.LET:
                 return self.__parse_let_statement()
@@ -350,6 +349,10 @@ class Parser:
 
         # Parse the right-hand side expression
         right_value = self.__parse_expression(PrecedenceType.P_LOWEST)
+
+        # Ensure the statement ends with a semicolon
+        if not self.__expect_peek(TokenType.SEMICOLON):
+            self.__handle_parse_error("Expected ';' after assignment statement")
 
         # Construct and return the assignment statement
         return AssignStatement(ident=ident, operator=operator, right_value=right_value)
