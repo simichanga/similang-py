@@ -60,7 +60,10 @@
                                 }
                             },
                             "operator": "*",
-                            "right_node": null
+                            "right_node": {
+                                "type": "IntegerLiteral",
+                                "value": 2
+                            }
                         },
                         "value_type": "int"
                     },

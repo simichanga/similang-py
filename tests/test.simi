@@ -1,6 +1,6 @@
 fn main() -> int {
     let name: str = "John";
-    let age: int = (1 + 2*3 + 4) * ;
+    let age: int = (1 + 2*3 + 4) * 2;
     let random: float = 3.5;
     printf("%s is %d years old.", name, age);
     return 0;

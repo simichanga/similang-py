@@ -166,29 +166,38 @@ class Parser:
         # let a: int = 10;
         stmt: LetStatement = LetStatement()
 
+        # Check if an identifier exists
         if not self.__expect_peek(TokenType.IDENT):
-            raise SyntaxError(f'Expected identifier')
+            raise SyntaxError(f'Expected identifier at line {self.current_token.line_no}')
 
         stmt.name = IdentifierLiteral(value = self.current_token.literal)
 
-        # Syntax Checking
+        # Check if a colon exists
         if not self.__expect_peek(TokenType.COLON):
-            raise SyntaxError(f'Variable expects colon.')
+            raise SyntaxError(f'Variable expects colon at line {self.current_token.line_no}')
 
+        # Check if a type declaration exists
         if not self.__expect_peek(TokenType.TYPE):
-            raise SyntaxError(f'Variable expects type.')
+            raise SyntaxError(f'Variable expects type at line {self.current_token.line_no}')
 
         stmt.value_type = self.current_token.literal
 
+        # Check if an equals sign exists
         if not self.__expect_peek(TokenType.EQ):
-            raise SyntaxError(f'Variable expects initialization on creation.')
+            raise SyntaxError(f'Variable expects initialization on creation at line {self.current_token.line_no}')
 
+        # Parse the expression
         self.__next_token()
-
         stmt.value = self.__parse_expression(PrecedenceType.P_LOWEST)
 
+        # Skip extra tokens until a semicolon or EOF is encountered
+        max_iterations = 100  # Prevent potential infinite loops
+        iterations = 0
         while not self.__current_token_is(TokenType.SEMICOLON) and not self.__current_token_is(TokenType.EOF):
+            if iterations >= max_iterations:
+                raise SyntaxError(f'Unexpected long statement at line {self.current_token.line_no}')
             self.__next_token()
+            iterations += 1
 
         return stmt
 
@@ -408,14 +417,14 @@ class Parser:
             if prefix_fn is None:
                 self.__no_prefix_parse_fn_error(self.current_token.type)
                 # Add logging to provide more context
-                print(f"Error: No prefix parse function found for token type {self.current_token.type}")
+                self.errors.append(f"No prefix parse function found for token type {self.current_token.type}")
                 return None
 
             # Call the prefix parsing function with exception handling
             try:
                 left_expr: Expression = prefix_fn()
             except Exception as e:
-                print(f"Error in prefix_fn execution: {e}")
+                self.errors.append(f"Error in prefix_fn execution: {e}")
                 return None
 
             # TODO: can't cache the result of peek_precedence to avoid redundant calculations
@@ -426,7 +435,7 @@ class Parser:
                 infix_fn: Callable | None = self.infix_parse_fns.get(self.peek_token.type)
                 if infix_fn is None:
                     # Add logging to provide more context
-                    print(f"Info: No infix parse function found for token type {self.peek_token.type}")
+                    self.errors.append(f"Info: No infix parse function found for token type {self.peek_token.type}")
                     break
 
                 # Call the infix parsing function with exception handling
@@ -434,13 +443,13 @@ class Parser:
                     self.__next_token()
                     left_expr = infix_fn(left_expr)
                 except Exception as e:
-                    print(f"Error in infix_fn execution: {e}")
+                    self.errors.append(f"Error in infix_fn execution: {e}")
                     break
 
             return left_expr
         except Exception as e:
-            # Catch top-level exceptions to ensure the program does not crash due to unknown errors
-            print(f"Critical error in __parse_expression: {e}")
+            # Catch top-level exceptions to ensure the program does not crash due to unknown err
+            self.errors.append(f"Critical error in __parse_expression: {e}")
             return None
 
     def __parse_infix_expression(self, left_node: Expression) -> Expression:
@@ -517,11 +526,6 @@ class Parser:
         :param converter: Conversion function (e.g., int or float)
         :return: Parsed literal object, or None if parsing fails
         """
-
-        # TODO: fix this for proper type checking for literal
-        # if not isinstance(self.current_token.literal, str):
-        #     self.errors.append(f'Invalid token literal: `{self.current_token.literal}`.')
-        #     return None
 
         literal_instance = literal_class()
 
