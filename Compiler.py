@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, Optional
 
 from llvmlite import ir
 
@@ -117,7 +117,10 @@ class Compiler:
 
         if self.env.lookup(name) is None:
             # Define and allocate the variable
-            ptr = self.builder.alloca(Type)
+            if value_type == 'bool': # TODO ugly hotfix for bool assignment
+                ptr = self.builder.alloca(ir.IntType(1))  # Allocate i1 type for boolean
+            else:
+                ptr = self.builder.alloca(Type)
 
             # Store the value at the ptr
             self.builder.store(value, ptr)
@@ -454,7 +457,7 @@ class Compiler:
     # endregion
 
     # region Helper Methods
-    def __resolve_value(self, node: Expression) -> tuple[ir.Value, ir.Type]: # TODO implement value_type parameter
+    def __resolve_value(self, node: Expression) -> Optional[Tuple[ir.Value, ir.Type]]: # TODO implement value_type parameter
         match node.type():
             case NodeType.IntegerLiteral:
                 node: IntegerLiteral = node
@@ -470,7 +473,7 @@ class Compiler:
                 return self.builder.load(ptr), Type
             case NodeType.BooleanLiteral:
                 node: BooleanLiteral = node
-                return ir.Constant(ir.IntType(1), 1 if node.value else 0), ir.IntType
+                return ir.Constant(ir.IntType(1), 1 if node.value else 0), ir.IntType(1) # Ensure i1 type for boolean
             case NodeType.StringLiteral:
                 node: StringLiteral = node
                 string, Type = self.__convert_string(node.value)

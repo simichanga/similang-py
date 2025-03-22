@@ -67,6 +67,10 @@ class Parser:
         self.infix_parse_fns[TokenType.LPAREN] = self.__parse_call_expression
         self.infix_parse_fns[TokenType.PLUS_PLUS] = self.__parse_postfix_expression
         self.infix_parse_fns[TokenType.MINUS_MINUS] = self.__parse_postfix_expression
+        self.infix_parse_fns[TokenType.PLUS_EQ] = self.__parse_assignment_expression
+        self.infix_parse_fns[TokenType.MINUS_EQ] = self.__parse_assignment_expression
+        self.infix_parse_fns[TokenType.MUL_EQ] = self.__parse_assignment_expression
+        self.infix_parse_fns[TokenType.DIV_EQ] = self.__parse_assignment_expression
 
         self.__next_token() # Initialize current_token
         self.__next_token() # Initialize peek_token
@@ -114,6 +118,11 @@ class Parser:
 
     def __no_prefix_parse_fn_error(self, tt: TokenType) -> None:
         self.errors.append(f'No Prefix Parse Function for {tt} found.')
+
+    def __handle_parse_error(self, message: str) -> None:
+        """Helper function: Handle parse errors and return None"""
+        self.errors.append(f"Parse Error: {message}")  # TODO: can be replaced later with logging
+        return None
     # endregion
 
     def parse_program(self) -> Program:
@@ -150,6 +159,13 @@ class Parser:
                 return self.__parse_break_statement()
             case _:
                 return self.__parse_expression_statement()
+
+    def __parse_assignment_expression(self, left_node: Expression) -> Expression:
+        operator = self.current_token.literal
+        self.__next_token()
+        right_node = self.__parse_expression(PrecedenceType.P_LOWEST)
+
+        return InfixExpression(left_node=left_node, operator=operator, right_node=right_node)
 
     def __parse_expression_statement(self) -> ExpressionStatement | None:
         expr = self.__parse_expression(PrecedenceType.P_LOWEST)
@@ -202,32 +218,50 @@ class Parser:
         return stmt
 
     def __parse_function_statement(self) -> FunctionStatement | None:
-        stmt: FunctionStatement = FunctionStatement()
+        try:
+            # Initialize FunctionStatement object
+            stmt: FunctionStatement = FunctionStatement()
 
-        if not self.__expect_peek(TokenType.IDENT):
-            return None
+            # Check if IDENT is expected
+            if not self.__expect_peek(TokenType.IDENT):
+                return self.__handle_parse_error("Expected IDENT")
 
-        stmt.name = IdentifierLiteral(value = self.current_token.literal)
+            # Set function name
+            if self.current_token is None:
+                return self.__handle_parse_error("Current token is None")
+            stmt.name = IdentifierLiteral(value=self.current_token.literal)
 
-        if not self.__expect_peek(TokenType.LPAREN):
-            return None
+            # Check if LPAREN is expected
+            if not self.__expect_peek(TokenType.LPAREN):
+                return self.__handle_parse_error("Expected LPAREN")
 
-        stmt.parameters = self.__parse_function_parameters()
+            # Parse function parameters
+            stmt.parameters = self.__parse_function_parameters()
 
-        if not self.__expect_peek(TokenType.ARROW):
-            return None
+            # Check if ARROW is expected
+            if not self.__expect_peek(TokenType.ARROW):
+                return self.__handle_parse_error("Expected ARROW")
 
-        if not self.__expect_peek(TokenType.TYPE):
-            return None
+            # Check if TYPE is expected
+            if not self.__expect_peek(TokenType.TYPE):
+                return self.__handle_parse_error("Expected TYPE")
 
-        stmt.return_type = self.current_token.literal
+            # Set return type
+            if self.current_token is None:
+                return self.__handle_parse_error("Current token is None after TYPE")
+            stmt.return_type = self.current_token.literal
 
-        if not self.__expect_peek(TokenType.LBRACE):
-            return None
+            # Check if LBRACE is expected
+            if not self.__expect_peek(TokenType.LBRACE):
+                return self.__handle_parse_error("Expected LBRACE")
 
-        stmt.body = self.__parse_block_statement()
+            # Parse function body
+            stmt.body = self.__parse_block_statement()
 
-        return stmt
+            return stmt
+        except Exception as e:
+            # Capture exceptions and return None while logging the error
+            return self.__handle_parse_error(f"Unexpected error: {e}")
 
     def __parse_function_parameters(self) -> list[FunctionParameter] | None:
         params: list[FunctionParameter] = []
@@ -276,9 +310,9 @@ class Parser:
         return_value = self.__parse_expression(PrecedenceType.P_LOWEST)
 
         if not self.__expect_peek(TokenType.SEMICOLON):
-            return None
+            self.__handle_parse_error("Semicolon expected but not found after return expression")
 
-        return ReturnStatement(return_value = return_value)
+        return ReturnStatement(return_value)
 
     def __parse_block_statement(self) -> BlockStatement:
         block_stmt: BlockStatement = BlockStatement()
@@ -295,7 +329,7 @@ class Parser:
         return block_stmt
 
     def __parse_assignment_statement(self) -> AssignStatement:
-    # Ensure the left-hand side is an identifier
+        # Ensure the left-hand side is an identifier
         ident = IdentifierLiteral(value=self.current_token.literal)
 
         self.__next_token()  # Advance to the operator token
@@ -316,16 +350,6 @@ class Parser:
 
         # Parse the right-hand side expression
         right_value = self.__parse_expression(PrecedenceType.P_LOWEST)
-
-        # print(f'Debug Assign Statement: {ident=}, {operator=}, {right_value}')
-        # print(f'Current Token: {self.current_token}')
-
-        # Ensure the statement ends with a semicolon
-        # if not self.__current_token_is(TokenType.SEMICOLON):
-        #     raise SyntaxError(
-        #         f"Expected ';' after assignment statement, got '{self.current_token.literal}' "
-        #         f"at line {self.current_token.line_no}."
-        #     )
 
         # Construct and return the assignment statement
         return AssignStatement(ident=ident, operator=operator, right_value=right_value)
@@ -426,9 +450,6 @@ class Parser:
             except Exception as e:
                 self.errors.append(f"Error in prefix_fn execution: {e}")
                 return None
-
-            # TODO: can't cache the result of peek_precedence to avoid redundant calculations
-            # peek_precedence_value = self.__peek_precedence().value
 
             while not self.__peek_token_is(TokenType.SEMICOLON) and precedence.value < self.__peek_precedence().value:
                 # Retrieve the infix parsing function
