@@ -1,9 +1,11 @@
 from Lexer import Lexer
 from Token import TokenType, Token
-from typing import Callable
+from typing import Callable, List, Union, Any, Set, Type
 from enum import Enum, auto
 
 from __imports__ import *
+
+from typing import Dict, Optional
 
 # Precedence Types
 class PrecedenceType(Enum):
@@ -18,7 +20,7 @@ class PrecedenceType(Enum):
     P_INDEX = auto()
 
 # Predecence Mapping
-PRECEDENCES : dict[TokenType, PrecedenceType] = {
+PRECEDENCES : Dict[TokenType, PrecedenceType] = {
     TokenType.PLUS: PrecedenceType.P_SUM,
     TokenType.MINUS: PrecedenceType.P_SUM,
     TokenType.SLASH: PrecedenceType.P_PRODUCT,
@@ -43,10 +45,10 @@ class Parser:
     def __init__(self, lexer: Lexer) -> None:
         self.lexer: Lexer = lexer
         self.errors: list[str] = []
-        self.current_token: Token | None = None
-        self.peek_token: Token | None = None
+        self.current_token: Optional[Token] = None
+        self.peek_token: Optional[Token] = None
 
-        self.prefix_parse_fns: dict[TokenType, Callable] = {
+        self.prefix_parse_fns: Dict[TokenType, Callable] = {
             TokenType.IDENT: self.__parse_identifier,
             TokenType.INT: self.__parse_int_literal,
             TokenType.FLOAT: self.__parse_float_literal,
@@ -60,7 +62,7 @@ class Parser:
         }
 
         # Create a base dictionary with default values for all TokenTypes
-        self.infix_parse_fns: dict[TokenType, Callable] = { tt: self.__parse_infix_expression for tt in TokenType }
+        self.infix_parse_fns: Dict[TokenType, Callable] = { tt: self.__parse_infix_expression for tt in TokenType }
         # Override specific cases explicitly
         self.infix_parse_fns[TokenType.LPAREN] = self.__parse_call_expression
         self.infix_parse_fns[TokenType.PLUS_PLUS] = self.__parse_postfix_expression
@@ -82,13 +84,13 @@ class Parser:
         return self.peek_token.type == tt
 
     def __peek_token_is_assignment(self) -> bool:
-        assignment_operators: list[TokenType] = [
+        assignment_operators: Set[TokenType] = {
             TokenType.EQ,
             TokenType.PLUS_EQ,
             TokenType.MINUS_EQ,
             TokenType.MUL_EQ,
             TokenType.DIV_EQ,
-        ]
+        }
         return self.peek_token.type in assignment_operators
 
     def __expect_peek(self, tt: TokenType) -> bool:
@@ -319,10 +321,10 @@ class Parser:
         # Construct and return the assignment statement
         return AssignStatement(ident=ident, operator=operator, right_value=right_value)
 
-    def __parse_if_statement(self) -> IfStatement:
-        condition: Expression = None
-        consequence: BlockStatement = None
-        alternative: BlockStatement = None
+    def __parse_if_statement(self) -> Optional[IfStatement]:
+        condition: Optional[Expression] = None
+        consequence: Optional[BlockStatement] = None
+        alternative: Optional[BlockStatement] = None
 
         self.__next_token()
 
@@ -343,9 +345,9 @@ class Parser:
 
         return IfStatement(condition, consequence, alternative)
 
-    def __parse_while_statement(self) -> WhileStatement:
-        condition: Expression = None
-        body: BlockStatement = None
+    def __parse_while_statement(self) -> Optional[WhileStatement]:
+        condition: Optional[Expression] = None
+        body: Optional[BlockStatement] = None
 
         self.__next_token()
 
@@ -399,7 +401,7 @@ class Parser:
     # endregion
 
     # region Expression Methods
-    def __parse_expression(self, precedence: PrecedenceType) -> None:
+    def __parse_expression(self, precedence: PrecedenceType) -> Expression | None:
         prefix_fn: Callable | None = self.prefix_parse_fns.get(self.current_token.type)
         if prefix_fn is None:
             self.__no_prefix_parse_fn_error(self.current_token.type)
@@ -418,7 +420,10 @@ class Parser:
         return left_expr
 
     def __parse_infix_expression(self, left_node: Expression) -> Expression:
-        infix_expr: InfixExpression = InfixExpression(left_node = left_node, operator = self.current_token.literal)
+        infix_expr: InfixExpression = InfixExpression(
+            left_node = left_node,
+            operator = self.current_token.literal
+        )
 
         precedence = self.__current_precedence()
 
@@ -428,7 +433,7 @@ class Parser:
 
         return infix_expr
 
-    def __parse_grouped_expression(self) -> Expression:
+    def __parse_grouped_expression(self) -> Optional[Expression]:
         self.__next_token()
 
         expr: Expression = self.__parse_expression(PrecedenceType.P_LOWEST)
@@ -444,8 +449,8 @@ class Parser:
 
         return expr
 
-    def __parse_expression_list(self, end: TokenType) -> list[Expression]:
-        e_list: list[Expression] = []
+    def __parse_expression_list(self, end: TokenType) -> Optional[List[Expression]]:
+        e_list: List[Expression] = []
 
         if self.__peek_token_is(end):
             self.__next_token()
@@ -480,34 +485,49 @@ class Parser:
     # endregion
 
     # region Prefix Methods
-    def __parse_identifier(self) -> IdentifierLiteral:
-        return IdentifierLiteral(value = self.current_token.literal)
+    def __parse_literal(self, literal_class: Type[Expression], converter: Callable[[str], Any]) -> Optional[Expression]:
+        """
+        A generic literal parsing function.
 
-    def __parse_int_literal(self) -> Expression:
-        int_lit: IntegerLiteral = IntegerLiteral()
+        :param literal_class: Literal class (e.g., IntegerLiteral or FloatLiteral)
+        :param converter: Conversion function (e.g., int or float)
+        :return: Parsed literal object, or None if parsing fails
+        """
+
+        # TODO: fix this for proper type checking for literal
+        # if not isinstance(self.current_token.literal, str):
+        #     self.errors.append(f'Invalid token literal: `{self.current_token.literal}`.')
+        #     return None
+
+        literal_instance = literal_class()
 
         try:
-            int_lit.value = int(self.current_token.literal)
-        except:
-            self.errors.append(f'Could not parse `{self.current_token.literal}` as an integer.')
+            literal_instance.value = converter(self.current_token.literal)
+        except ValueError:
+            self.errors.append(f'Could not parse `{self.current_token.literal}` as a {literal_class.__name__.lower()}.')
             return None
 
-        return int_lit
+        return literal_instance
 
-    def __parse_float_literal(self) -> Expression:
-        float_lit: IntegerLiteral = FloatLiteral()
+    # TODO: add proper type enforcing for current_type
+    def __parse_string_or_identifier(self, current_type: Any) -> Union[IdentifierLiteral, StringLiteral]:
+        if not isinstance(self.current_token.literal, str):
+            self.errors.append(f'Error at line: {self.current_token.line_no}: Invalid identifier: `{self.current_token.literal}`.')
+            return current_type(value="")
+        return current_type(value=self.current_token.literal)
 
-        try:
-            float_lit.value = float(self.current_token.literal)
-        except:
-            self.errors.append(f'Could not parse `{self.current_token.literal}` as a float.')
-            return None
+    def __parse_int_literal(self) -> Optional[IntegerLiteral]:
+        return self.__parse_literal(IntegerLiteral, int)
 
-        return float_lit
+    def __parse_float_literal(self) -> Optional[FloatLiteral]:
+        return self.__parse_literal(FloatLiteral, float)
 
     def __parse_boolean(self) -> BooleanLiteral:
-        return BooleanLiteral(value = self.__current_token_is(TokenType.TRUE))
+        return BooleanLiteral(value=self.__current_token_is(bool))
+
+    def __parse_identifier(self) -> IdentifierLiteral:
+        return self.__parse_string_or_identifier(IdentifierLiteral)
 
     def __parse_string_literal(self) -> StringLiteral:
-        return StringLiteral(value = self.current_token.literal)
+        return self.__parse_string_or_identifier(StringLiteral)
     # endregion

@@ -105,7 +105,6 @@ KEYWORDS: Dict[str, TokenType] = {
 
 TYPE_KEYWORDS: Set[str] = {'bool', 'int', 'float', 'str', 'void'}
 
-
 def lookup_ident(ident: str) -> TokenType:
     """
     Look up the corresponding TokenType for an identifier.

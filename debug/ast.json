@@ -30,18 +30,22 @@
                             "value": "age"
                         },
                         "value": {
-                            "type": "InfixExpression",
-                            "left_node": {
-                                "type": "IntegerLiteral",
-                                "value": 18
-                            },
-                            "operator": "+",
-                            "right_node": {
-                                "type": "IntegerLiteral",
-                                "value": 5
-                            }
+                            "type": "IntegerLiteral",
+                            "value": 22
                         },
                         "value_type": "int"
+                    },
+                    {
+                        "type": "LetStatement",
+                        "name": {
+                            "type": "IdentifierLiteral",
+                            "value": "random"
+                        },
+                        "value": {
+                            "type": "FloatLiteral",
+                            "value": 3.5
+                        },
+                        "value_type": "float"
                     },
                     {
                         "type": "ExpressionStatement",
@@ -54,7 +58,7 @@
                             "arguments": [
                                 {
                                     "type": "StringLiteral",
-                                    "value": "%s is %i years old."
+                                    "value": "%s is %d years old."
                                 },
                                 {
                                     "type": "IdentifierLiteral",
