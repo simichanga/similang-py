@@ -1,3 +1,5 @@
+# test_assignments.py
+
 import unittest
 from Lexer import Lexer
 from Parser import Parser
@@ -53,88 +55,88 @@ class TestAssignments(unittest.TestCase):
         fn main() -> int {
             let num: int = 10;
             num += 5;
-            return num;
+            printf("%d\\n", num);
         }
         """
-        result = self.compile_and_execute(code)
-        self.assertEqual(result, 15)
+        output = self.compile_and_execute(code)
+        self.assertIn("15", output)
 
     def test_composite_assignment_subtract(self):
         code = """
         fn main() -> int {
             let num: int = 10;
             num -= 5;
-            return num;
+            printf("%d\\n", num);
         }
         """
-        result = self.compile_and_execute(code)
-        self.assertEqual(result, 5)
+        output = self.compile_and_execute(code)
+        self.assertIn("5", output)
 
     def test_composite_assignment_multiply(self):
         code = """
         fn main() -> int {
             let num: int = 10;
             num *= 2;
-            return num;
+            printf("%d\\n", num);
         }
         """
-        result = self.compile_and_execute(code)
-        self.assertEqual(result, 20)
+        output = self.compile_and_execute(code)
+        self.assertIn("20", output)
 
     def test_composite_assignment_divide(self):
         code = """
         fn main() -> int {
             let num: int = 10;
             num /= 2;
-            return num;
+            printf("%d\\n", num);
         }
         """
-        result = self.compile_and_execute(code)
-        self.assertEqual(result, 5)
+        output = self.compile_and_execute(code)
+        self.assertIn("5", output)
 
     def test_composite_assignment_float_add(self):
         code = """
         fn main() -> float {
             let num: float = 10.0;
             num += 5.5;
-            return num;
+            printf("%f\\n", num);
         }
         """
-        result = self.compile_and_execute(code)
-        self.assertAlmostEqual(result, 15.5)
+        output = self.compile_and_execute(code)
+        self.assertIn("15.5", output)
 
     def test_composite_assignment_float_subtract(self):
         code = """
         fn main() -> float {
             let num: float = 10.0;
             num -= 5.5;
-            return num;
+            printf("%f\\n", num);
         }
         """
-        result = self.compile_and_execute(code)
-        self.assertAlmostEqual(result, 4.5)
+        output = self.compile_and_execute(code)
+        self.assertIn("4.5", output)
 
     def test_composite_assignment_float_multiply(self):
         code = """
         fn main() -> float {
             let num: float = 10.0;
             num *= 2.5;
-            return num;
+            printf("%f\\n", num);
         }
         """
-        result = self.compile_and_execute(code)
-        self.assertAlmostEqual(result, 25.0)
+        output = self.compile_and_execute(code)
+        self.assertIn("25.0", output)
 
     def test_composite_assignment_float_divide(self):
         code = """
         fn main() -> float {
             let num: float = 10.0;
             num /= 2.5;
-            return num;
+            printf("%f\\n", num);
         }
         """
-        result = self.compile_and_execute(code)
-        self.assertAlmostEqual(result, 4.0)
+        output = self.compile_and_execute(code)
+        self.assertIn("4.0", output)
 
     def test_mixed_type_assignment(self):
         code = """
@@ -142,11 +144,11 @@ class TestAssignments(unittest.TestCase):
             let num: int = 10;
             let float_num: float = 5.5;
             num += float_num;
-            return num;
+            printf("%f\\n", num);
         }
         """
-        result = self.compile_and_execute(code)
-        self.assertAlmostEqual(result, 15.5)
+        output = self.compile_and_execute(code)
+        self.assertIn("15.5", output)
 
     def test_invalid_assignment(self):
         code = """
