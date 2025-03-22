@@ -402,22 +402,46 @@ class Parser:
 
     # region Expression Methods
     def __parse_expression(self, precedence: PrecedenceType) -> Expression | None:
-        prefix_fn: Callable | None = self.prefix_parse_fns.get(self.current_token.type)
-        if prefix_fn is None:
-            self.__no_prefix_parse_fn_error(self.current_token.type)
+        try:
+            # Retrieve the prefix parsing function
+            prefix_fn: Optional[Callable] = self.prefix_parse_fns.get(self.current_token.type)
+            if prefix_fn is None:
+                self.__no_prefix_parse_fn_error(self.current_token.type)
+                # Add logging to provide more context
+                print(f"Error: No prefix parse function found for token type {self.current_token.type}")
+                return None
+
+            # Call the prefix parsing function with exception handling
+            try:
+                left_expr: Expression = prefix_fn()
+            except Exception as e:
+                print(f"Error in prefix_fn execution: {e}")
+                return None
+
+            # TODO: can't cache the result of peek_precedence to avoid redundant calculations
+            # peek_precedence_value = self.__peek_precedence().value
+
+            while not self.__peek_token_is(TokenType.SEMICOLON) and precedence.value < self.__peek_precedence().value:
+                # Retrieve the infix parsing function
+                infix_fn: Callable | None = self.infix_parse_fns.get(self.peek_token.type)
+                if infix_fn is None:
+                    # Add logging to provide more context
+                    print(f"Info: No infix parse function found for token type {self.peek_token.type}")
+                    break
+
+                # Call the infix parsing function with exception handling
+                try:
+                    self.__next_token()
+                    left_expr = infix_fn(left_expr)
+                except Exception as e:
+                    print(f"Error in infix_fn execution: {e}")
+                    break
+
+            return left_expr
+        except Exception as e:
+            # Catch top-level exceptions to ensure the program does not crash due to unknown errors
+            print(f"Critical error in __parse_expression: {e}")
             return None
-
-        left_expr: Expression = prefix_fn()
-        while not self.__peek_token_is(TokenType.SEMICOLON) and precedence.value < self.__peek_precedence().value:
-            infix_fn: Callable | None = self.infix_parse_fns.get(self.peek_token.type)
-            if infix_fn is None:
-                return left_expr
-
-            self.__next_token()
-
-            left_expr = infix_fn(left_expr)
-
-        return left_expr
 
     def __parse_infix_expression(self, left_node: Expression) -> Expression:
         infix_expr: InfixExpression = InfixExpression(
