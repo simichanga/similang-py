@@ -29,7 +29,8 @@ main_entry:
   %".19" = alloca [31 x i8]*
   store [31 x i8]* @"__str_2", [31 x i8]** %".19"
   %".21" = bitcast [31 x i8]* @"__str_2" to i8*
-  %".22" = call i32 (i8*, ...) @"printf"(i8* %".21", [5 x i8]* %".16", i32 %".17", float %".18")
+  %".22" = fpext float %".18" to double
+  %".23" = call i32 (i8*, ...) @"printf"(i8* %".21", [5 x i8]* %".16", i32 %".17", double %".22")
   ret i32 0
 }
 

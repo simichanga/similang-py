@@ -547,10 +547,17 @@ class Compiler:
             g_var_ptr = c_fmt.operands[0]
             string_val = self.builder.load(g_var_ptr)
             fmt_arg = self.builder.bitcast(string_val, ir.IntType(8).as_pointer())
-            return self.builder.call(func, [fmt_arg, *rest_params])
         else:
-            # TODO handle printing floats
+            # Convert the format string to a global variable
             fmt_arg = self.builder.bitcast(self.module.get_global(f'__str_{self.counter}'), ir.IntType(8).as_pointer())
 
-            return self.builder.call(func, [fmt_arg, *rest_params])
+        # Prepare the arguments for printf
+        args = [fmt_arg]
+        for param in rest_params:
+            if isinstance(param.type, ir.FloatType):
+                # Bitcast float to double for printf compatibility
+                param = self.builder.fpext(param, ir.DoubleType())
+            args.append(param)
+
+        return self.builder.call(func, args)
     # endregion
