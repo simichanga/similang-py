@@ -1,11 +1,12 @@
-fn main() -> int {
+fn add(a: int, b: int) -> int {
+    return a + b;
+}
 
+fn main() -> int {
     let name: str = "John";
-    let age: int = (1 + 2*3 + 4) * 2;
-    age += 2;
+    let age: int = add(18, 10);
 
     let num: float = 3.1 + 0.4;
 
     printf("%s is %d years old.\n num is %.1f", name, age, num);
-
 }

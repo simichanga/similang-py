@@ -10,8 +10,8 @@ from pipeline.executor import execute_code
 
 class TestAssignments(unittest.TestCase):
     def compile_and_execute(self, code):
-        lexer = Lexer(source=code)
-        parser = Parser(lexer=lexer)
+        lexer = Lexer(code)
+        parser = Parser(lexer)
         program = parser.parse_program()
 
         if len(parser.errors) > 0:
@@ -72,7 +72,7 @@ class TestAssignments(unittest.TestCase):
             printf("%d\\n", num);
         }
         """
-        output = self.compile_and_execute(code)
+        _, output = self.compile_and_execute(code)
         self.assertIn("15", output)
 
     def test_composite_assignment_subtract(self):
