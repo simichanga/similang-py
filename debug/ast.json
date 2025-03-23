@@ -89,12 +89,12 @@
                             "type": "InfixExpression",
                             "left_node": {
                                 "type": "FloatLiteral",
-                                "value": 1.2
+                                "value": 3.1
                             },
                             "operator": "+",
                             "right_node": {
                                 "type": "FloatLiteral",
-                                "value": 2.3
+                                "value": 0.4
                             }
                         },
                         "value_type": "float"
@@ -110,7 +110,7 @@
                             "arguments": [
                                 {
                                     "type": "StringLiteral",
-                                    "value": "%s is %d years old.\n num is %f"
+                                    "value": "%s is %d years old.\n num is %.1f"
                                 },
                                 {
                                     "type": "IdentifierLiteral",

@@ -1,6 +1,8 @@
 # test_assignments.py
 
 import unittest
+import io
+import sys
 from Lexer import Lexer
 from Parser import Parser
 from Compiler import Compiler
@@ -18,7 +20,19 @@ class TestAssignments(unittest.TestCase):
         compiler = Compiler()
         compiler.compile(node=program)
 
-        return execute_code(compiler.module)
+        # Capture stdout to capture printf output
+        old_stdout = sys.stdout
+        new_stdout = io.StringIO()
+        sys.stdout = new_stdout
+
+        try:
+            result = execute_code(compiler.module)
+        finally:
+            sys.stdout = old_stdout
+
+        output = new_stdout.getvalue().strip()
+
+        return result, output
 
     def test_boolean_assignment(self):
         code = """

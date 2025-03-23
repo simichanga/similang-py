@@ -4,8 +4,8 @@ fn main() -> int {
     let age: int = (1 + 2*3 + 4) * 2;
     age += 2;
 
-    let num: float = 1.2 + 2.3;
+    let num: float = 3.1 + 0.4;
 
-    printf("%s is %d years old.\n num is %f", name, age, num);
+    printf("%s is %d years old.\n num is %.1f", name, age, num);
 
 }

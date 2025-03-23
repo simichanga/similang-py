@@ -2,6 +2,8 @@ import time
 from ctypes import CFUNCTYPE, c_int
 import llvmlite.binding as llvm
 
+from utils.config import Config
+
 def execute_code(module) -> int:
     llvm.initialize()
     llvm.initialize_native_target()
@@ -21,6 +23,7 @@ def execute_code(module) -> int:
     result = cfunc()
     et = time.time()
 
-    print(f'\nProgram returned: {result}\n=== Executed in {round((et - st) * 1000, 6)} ms. ===')
+    if Config.SHOW_EXECUTION_OUTPUT:
+        print(f'\nProgram returned: {result}\nExecuted in {round((et - st) * 1000, 6)} ms.')
 
     return result
