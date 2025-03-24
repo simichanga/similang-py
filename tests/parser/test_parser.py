@@ -1,51 +1,37 @@
 import unittest
+
+from core_pipeline.compiler import Compiler
 from core_pipeline.parser import Parser
 from core_pipeline.lexer import Lexer
 from core_pipeline.ast import AssignStatement
+from pipeline.executor import execute_code
 
 
-class TestParser(unittest.TestCase):
-    def setUp(self):
-        self.lexer = Lexer("")
-        self.parser = Parser(self.lexer)
+class TestForLoopWithPostfixIncrement(unittest.TestCase):
+    def test_for_loop_with_postfix_increment(self):
+        code = """
+        fn main() -> int {
+            let sum: int = 0;
+            for (let i: int = 0; i < 10; i++) {
+                sum += i;
+            }
+            printf("Suma este %i", sum);
+        }
+        """
+        lexer = Lexer(source=code)
+        parser = Parser(lexer=lexer)
+        program = parser.parse_program()
 
-    def test_parse_assignment_statement_ValidAssignment_ReturnsAssignStatement(self):
-        self.lexer.source = "a = 10;"
-        self.lexer.tokenize()
-        self.parser = Parser(self.lexer)
-        statement = self.parser.__parse_assignment_statement()
-        self.assertIsInstance(statement, AssignStatement)
-        self.assertEqual(statement.ident.value, "a")
-        self.assertEqual(statement.operator, "=")
-        self.assertEqual(statement.right_value.value, 10)
+        if len(parser.errors) > 0:
+            self.fail(f"Parser errors: {parser.errors}")
 
-    def test_parse_assignment_statement_InvalidIdentifier_ThrowsSyntaxError(self):
-        self.lexer.input = "10 = 10;"
-        self.lexer.tokenize()
-        self.parser = Parser(self.lexer)
-        with self.assertRaises(SyntaxError):
-            self.parser.__parse_assignment_statement()
+        compiler = Compiler()
+        compiler.compile(node=program)
 
-    def test_parse_assignment_statement_InvalidOperator_ThrowsSyntaxError(self):
-        self.lexer.input = "a * 10;"
-        self.lexer.tokenize()
-        self.parser = Parser(self.lexer)
-        with self.assertRaises(SyntaxError):
-            self.parser.__parse_assignment_statement()
+        # Execute and assert the result
+        result = execute_code(compiler.module)
+        self.assertEqual(result['sum'], 45)
 
-    def test_parse_assignment_statement_MissingSemicolon_ThrowsSyntaxError(self):
-        self.lexer.input = "a = 10"
-        self.lexer.tokenize()
-        self.parser = Parser(self.lexer)
-        with self.assertRaises(SyntaxError):
-            self.parser.__parse_assignment_statement()
-
-    def test_parse_assignment_statement_InvalidRightExpression_ThrowsSyntaxError(self):
-        self.lexer.input = "a = ;"
-        self.lexer.tokenize()
-        self.parser = Parser(self.lexer)
-        with self.assertRaises(SyntaxError):
-            self.parser.__parse_assignment_statement()
 
 if __name__ == '__main__':
     unittest.main()

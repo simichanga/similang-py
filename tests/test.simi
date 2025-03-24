@@ -1,5 +1,7 @@
 fn main() -> int {
-    let name: str = "John";
-    let sum: float = 3.5;
-    printf("Suma este %.1f", sum);
+    let sum: int = 0;
+    for (let i: int = 0; i < 10; i++) {
+        sum++;
+    }
+    printf("Suma este %i", sum);
 }

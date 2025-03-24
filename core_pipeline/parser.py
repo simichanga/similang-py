@@ -116,9 +116,6 @@ class Parser:
     def __peek_error(self, tt: TokenType) -> None:
         self.errors.append(f'Expected next token to be {tt}, got {self.peek_token.type} instead.')
 
-    def __no_prefix_parse_fn_error(self, tt: TokenType) -> None:
-        self.errors.append(f'No Prefix Parse Function for {tt} found.')
-
     def __handle_parse_error(self, message: str) -> None:
         """Helper function: Handle parse errors and return None"""
         self.errors.append(f"Parse Error: {message}")  # TODO: can be replaced later with logging
@@ -411,10 +408,12 @@ class Parser:
             condition = None
 
         # Parse action
-        self.__next_token()
-        self.__next_token()
-
-        action = self.__parse_assignment_statement()  # Ensure this handles `AssignStatement` or `InfixExpression`
+        self.__expect_peek(TokenType.SEMICOLON)
+        if not self.__peek_token_is(TokenType.RPAREN):
+            self.__next_token()
+            action = self.__parse_expression(PrecedenceType.P_LOWEST)
+        else:
+            action = None
 
         # Parse body
         self.__expect_peek(TokenType.LBRACE)
@@ -442,9 +441,7 @@ class Parser:
             # Retrieve the prefix parsing function
             prefix_fn: Optional[Callable] = self.prefix_parse_fns.get(self.current_token.type)
             if prefix_fn is None:
-                self.__no_prefix_parse_fn_error(self.current_token.type)
-                # Add logging to provide more context
-                self.errors.append(f"No prefix parse function found for token type {self.current_token.type}")
+                self.errors.append(f"No Prefix Parse Function for {self.current_token} found.")
                 return None
 
             # Call the prefix parsing function with exception handling
@@ -454,6 +451,13 @@ class Parser:
                 self.errors.append(f"Error in prefix_fn execution: {e}")
                 return None
 
+            # Handle postfix expressions explicitly
+            if self.__peek_token_is(TokenType.PLUS_PLUS) or self.__peek_token_is(TokenType.MINUS_MINUS):
+                self.__next_token()
+                left_expr = self.__parse_postfix_expression(left_expr)
+                return left_expr
+
+            # Handle infix expressions
             while not self.__peek_token_is(TokenType.SEMICOLON) and precedence.value < self.__peek_precedence().value:
                 # Retrieve the infix parsing function
                 infix_fn: Callable | None = self.infix_parse_fns.get(self.peek_token.type)
@@ -538,7 +542,8 @@ class Parser:
         return prefix_expr
 
     def __parse_postfix_expression(self, left_node: Expression) -> PostfixExpression:
-        return PostfixExpression(left_node = left_node, operator = self.current_token.literal)
+        operator = self.current_token.literal
+        return PostfixExpression(left_node = left_node, operator = operator)
     # endregion
 
     # region Prefix Methods
