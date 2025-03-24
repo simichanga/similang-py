@@ -5,6 +5,9 @@ import llvmlite.binding as llvm
 from utils.config import Config
 
 def execute_code(module) -> int:
+    """
+    Executes the compiled LLVM module and returns the result of the `main` function.
+    """
     llvm.initialize()
     llvm.initialize_native_target()
     llvm.initialize_native_asmprinter()

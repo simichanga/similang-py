@@ -1,7 +1,6 @@
 from core_pipeline.token import Token, TokenType, lookup_ident
 from typing import Any
 
-
 class Lexer:
     def __init__(self, source: str) -> None:
         self.source = source
@@ -91,7 +90,7 @@ class Lexer:
 
         return self.source[position:self.position]
 
-    def __read_string(self) -> str:
+    def __read_string(self) -> Token:
         """ Reads a string, handling escape sequences. """
         start_pos = self.position + 1
         escaped = False

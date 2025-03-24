@@ -10,7 +10,7 @@ class TestParser(unittest.TestCase):
         self.parser = Parser(self.lexer)
 
     def test_parse_assignment_statement_ValidAssignment_ReturnsAssignStatement(self):
-        self.lexer.input = "a = 10;"
+        self.lexer.source = "a = 10;"
         self.lexer.tokenize()
         self.parser = Parser(self.lexer)
         statement = self.parser.__parse_assignment_statement()

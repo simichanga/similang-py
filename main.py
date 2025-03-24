@@ -3,9 +3,7 @@ from core_pipeline.parser import Parser
 from core_pipeline.compiler import Compiler
 from core_pipeline.ast import Program
 
-from pipeline.lexer_debugger import debug_lexer
-from pipeline.parser_debugger import debug_parser
-from pipeline.compiler_debugger import debug_compiler
+from pipeline.debugger import debug_lexer, debug_parser, debug_compiler
 from pipeline.executor import execute_code
 
 from utils.config import Config
