@@ -1,7 +1,16 @@
-fn main() -> int {
-    let sum: int = 0;
-    for (let i: int = 0; i < 10; i++) {
-        sum++;
+fn factorial(n: int) -> int {
+    if n == 0 {
+        return 1;
     }
-    printf("Suma este %i", sum);
+    return n * factorial(n - 1);
+}
+
+fn main() -> int {
+    let n: int = 2;
+    n += 3;
+    let out: int = factorial(n);
+    printf("Factorial de %i este %i \n", n, out);
+
+    let pi: float = 3.1415;
+    printf("Numarul %f este mai mic decat 4.0? %b \n", pi, pi < 4.0);
 }

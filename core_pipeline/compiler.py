@@ -6,6 +6,18 @@ from core_pipeline.__imports__ import *
 
 from core_pipeline.environment import Environment
 
+class CompileError(Exception):
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+        # self.line_no = line_no
+        # self.error_type = error_type
+
+    def __str__(self):
+        # return f"{self.error_type} at line {self.line_no}: {self.message}"
+        return f"{self.message}"
+
+
 class Compiler:
     def __init__(self) -> None:
         self.type_map: dict[str, ir.Type] = {
@@ -25,7 +37,7 @@ class Compiler:
 
         self.env: Environment = Environment()
 
-        self.errors: list[str] = []
+        self.errors: List[str] = []
 
         self.breakpoints: List[ir.Block] = []
         self.continues: List[ir.Block] = []
@@ -63,6 +75,9 @@ class Compiler:
     def __increment_counter(self) -> int:
         self.counter += 1
         return self.counter
+
+    def add_error(self, message: str):
+        self.errors.append(CompileError(message))
 
     def compile(self, node: Node) -> None:
         match node.type():
@@ -151,10 +166,10 @@ class Compiler:
     def __visit_function_statement(self, node: FunctionStatement) -> None:
         name: str = node.name.value
         body: BlockStatement = node.body
-        params: list[FunctionParameter] = node.parameters
+        params: List[FunctionParameter] = node.parameters
 
-        param_names: list[str] = [p.name for p in params]
-        param_types: list[ir.Type] = [self.type_map[p.value_type] for p in params]
+        param_names: List[str] = [p.name for p in params]
+        param_types: List[ir.Type] = [self.type_map[p.value_type] for p in params]
 
         return_type: ir.Type = self.type_map[node.return_type]
 
@@ -208,62 +223,71 @@ class Compiler:
         operator: str = node.operator
         value: Expression = node.right_value
 
+        # Check if the variable exists
         if self.env.lookup(name) is None:
             self.errors.append(f'COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned')
             return
 
-        right_value, right_type = self.__resolve_value(value)
+        # Resolve the right-hand value
+        try:
+            right_value, right_type = self.__resolve_value(value)
+        except Exception as e:
+            self.errors.append(f'COMPUTE ERROR: Failed to resolve value for identifier {name}: {e}')
+            return
+
+        # Get the variable pointer and original value
         var_ptr, _ = self.env.lookup(name)
         orig_value = self.builder.load(var_ptr)
 
-        # Handle assignment operators
-        if operator == '=':
-            value = right_value
-        elif operator == '+=':
-            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                value = self.builder.add(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.FloatType):
-                value = self.builder.fadd(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
-                right_value = self.builder.sitofp(right_value, ir.FloatType())
-                value = self.builder.fadd(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
-                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
-                value = self.builder.fadd(orig_value, right_value)
-        elif operator == '-=':
-            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                value = self.builder.sub(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.FloatType):
-                value = self.builder.fsub(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
-                right_value = self.builder.sitofp(right_value, ir.FloatType())
-                value = self.builder.fsub(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
-                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
-                value = self.builder.fsub(orig_value, right_value)
-        elif operator == '*=':
-            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                value = self.builder.mul(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.FloatType):
-                value = self.builder.fmul(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
-                right_value = self.builder.sitofp(right_value, ir.FloatType())
-                value = self.builder.fmul(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
-                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
-                value = self.builder.fmul(orig_value, right_value)
-        elif operator == '/=':
-            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                value = self.builder.sdiv(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.FloatType):
-                value = self.builder.fdiv(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
-                right_value = self.builder.sitofp(right_value, ir.FloatType())
-                value = self.builder.fdiv(orig_value, right_value)
-            elif isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
-                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
-                value = self.builder.fdiv(orig_value, right_value)
+        # Define supported operators
+        supported_operators = {'=', '+=', '-=', '*=', '/='}
 
+        # Check if the operator is valid
+        if operator not in supported_operators:
+            self.errors.append(f'COMPILE ERROR: Unsupported assignment operator "{operator}" for identifier {name}')
+            return
+
+        # Extract type information
+        orig_type = orig_value.type
+        right_is_int = isinstance(right_type, ir.IntType)
+        right_is_float = isinstance(right_type, ir.FloatType)
+        orig_is_int = isinstance(orig_type, ir.IntType)
+        orig_is_float = isinstance(orig_type, ir.FloatType)
+
+        # Helper function: Type conversion
+        def convert_to_int(value):
+            return self.builder.fptosi(value, ir.IntType(32)) if isinstance(value.type, ir.FloatType) else value
+        def convert_to_float(value):
+            return self.builder.sitofp(value, ir.FloatType()) if isinstance(value.type, ir.IntType) else value
+
+        # Helper function: Perform operation
+        def perform_operation(op, left, right):
+            if op == '=':
+                return right
+            elif op == '+=':
+                return self.builder.fadd(convert_to_float(left), convert_to_float(right))
+            elif op == '-=':
+                return self.builder.fsub(convert_to_float(left), convert_to_float(right))
+            elif op == '*=':
+                return self.builder.fmul(convert_to_float(left), convert_to_float(right))
+            elif op == '/=':
+                if right == 0:
+                    self.errors.append(f'COMPILE ERROR: Division by zero for identifier {name}')
+                    return None
+                return self.builder.fdiv(convert_to_float(left), convert_to_float(right))
+
+        # Perform the operation
+        value = perform_operation(operator, orig_value, right_value)
+        if value is None:
+            return  # Exit if an error occurs (e.g., division by zero)
+
+        # Ensure the types match before storing
+        if isinstance(value.type, ir.FloatType) and isinstance(orig_type, ir.IntType):
+            value = convert_to_int(value)
+        elif isinstance(value.type, ir.IntType) and isinstance(orig_type, ir.FloatType):
+            value = convert_to_float(value)
+
+        # Store the result
         self.builder.store(value, var_ptr)
 
     def __visit_if_statement(self, node: IfStatement) -> None:
@@ -421,7 +445,7 @@ class Compiler:
 
     def __visit_call_expression(self, node: CallExpression) -> tuple[ir.Value, ir.Type]:
         name: str = node.function.value
-        params: list[Expression] = node.arguments
+        params: List[Expression] = node.arguments
 
         # Resolve parameters
         args, types = [], []
@@ -467,7 +491,7 @@ class Compiler:
         operator: str = node.operator
 
         if self.env.lookup(left_node.value) is None:
-            self.errors.append(f'COMPILE ERROR: Identifier {left_node.value} has not been declared before it was used in a PostfixExpression') # TODO proper error throwing
+            self.add_error(f'Identifier {left_node.value} has not been declared before it was used in a PostfixExpression')
 
         var_ptr, _ = self.env.lookup(left_node.value)
         orig_value = self.builder.load(var_ptr)
@@ -534,7 +558,7 @@ class Compiler:
 
         return global_fmt, global_fmt.type
 
-    def builtin_printf(self, params: list[ir.Instruction], return_type: ir.Type) -> None:
+    def builtin_printf(self, params: List[ir.Instruction], return_type: ir.Type) -> None:
         func, _ = self.env.lookup('printf')
 
         c_str = self.builder.alloca(return_type)
