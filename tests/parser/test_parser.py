@@ -1,8 +1,8 @@
 import unittest
-from Parser import Parser
-from Lexer import Lexer
-from Token import Token, TokenType
-from AST import AssignStatement, IdentifierLiteral
+from core_pipeline.parser import Parser
+from core_pipeline.lexer import Lexer
+from core_pipeline.ast import AssignStatement
+
 
 class TestParser(unittest.TestCase):
     def setUp(self):

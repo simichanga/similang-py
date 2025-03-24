@@ -4,7 +4,7 @@ This file helps avoid circular dependencies and organizes imports.
 """
 
 # AST Nodes
-from AST import (
+from core_pipeline.ast import (
     Node, NodeType,
     Statement, Expression, Program,
     ExpressionStatement, LetStatement, FunctionStatement, ReturnStatement,

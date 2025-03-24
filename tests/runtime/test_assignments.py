@@ -3,9 +3,9 @@
 import unittest
 import io
 import sys
-from Lexer import Lexer
-from Parser import Parser
-from Compiler import Compiler
+from core_pipeline.lexer import Lexer
+from core_pipeline.parser import Parser
+from core_pipeline.compiler import Compiler
 from pipeline.executor import execute_code
 
 class TestAssignments(unittest.TestCase):

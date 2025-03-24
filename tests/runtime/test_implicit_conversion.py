@@ -1,10 +1,10 @@
 import unittest
 from pipeline.executor import execute_code
-from Compiler import Compiler
-from Parser import Parser
-from Lexer import Lexer
+from core_pipeline.compiler import Compiler
+from core_pipeline.parser import Parser
+from core_pipeline.lexer import Lexer
 
-class TestFunctionCalls(unittest.TestCase):
+class TestImplicitConversion(unittest.TestCase):
     def compile_and_execute(self, code):
         lexer = Lexer(source=code)
         parser = Parser(lexer=lexer)
@@ -18,28 +18,29 @@ class TestFunctionCalls(unittest.TestCase):
         
         return execute_code(compiler.module)
 
-    def test_simple_function_call(self):
+    def test_int_to_float_conversion(self):
         code = """
-        fn add(a: int, b: int) -> int {
-            return a + b;
-        }
-        
-        fn main() -> int {
-            return add(5, 10);
-        }
-        """
-        result = self.compile_and_execute(code)
-        self.assertEqual(result, 15)
-
-    def test_function_with_type_conversion(self):
-        code = """
-        fn multiply(a: int, b: float) -> float {
-            return a * b;
-        }
-        
         fn main() -> float {
-            return multiply(5, 3.0);
+            return 5 + 3.0;
         }
         """
         result = self.compile_and_execute(code)
-        self.assertEqual(result, 15.0)
+        self.assertEqual(result, 8.0)
+
+    def test_bool_to_int_conversion(self):
+        code = """
+        fn main() -> int {
+            return true + 1;
+        }
+        """
+        result = self.compile_and_execute(code)
+        self.assertEqual(result, 2)
+
+    def test_bool_to_float_conversion(self):
+        code = """
+        fn main() -> float {
+            return true + 1.0;
+        }
+        """
+        result = self.compile_and_execute(code)
+        self.assertEqual(result, 2.0)

@@ -1,4 +1,4 @@
-from Lexer import Lexer
+from core_pipeline.lexer import Lexer
 
 def debug_lexer(code: str) -> None:
     print('===== LEXER DEBUG =====')

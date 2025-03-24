@@ -9,30 +9,29 @@ declare i32 @"printf"(i8* %".1", ...)
 define i32 @"main"()
 {
 main_entry:
-  %".2" = alloca [5 x i8]*
-  store [5 x i8]* @"__str_1", [5 x i8]** %".2"
-  %".4" = mul i32 2, 3
-  %".5" = add i32 1, %".4"
-  %".6" = add i32 %".5", 4
-  %".7" = mul i32 %".6", 2
-  %".8" = alloca i32
-  store i32 %".7", i32* %".8"
-  %".10" = load i32, i32* %".8"
-  %".11" = add i32 %".10", 2
-  store i32 %".11", i32* %".8"
-  %".13" = fadd float 0x4008ccccc0000000, 0x3fd99999a0000000
-  %".14" = alloca float
-  store float %".13", float* %".14"
-  %".16" = load [5 x i8]*, [5 x i8]** %".2"
-  %".17" = load i32, i32* %".8"
-  %".18" = load float, float* %".14"
-  %".19" = alloca [33 x i8]*
-  store [33 x i8]* @"__str_2", [33 x i8]** %".19"
-  %".21" = bitcast [33 x i8]* @"__str_2" to i8*
-  %".22" = fpext float %".18" to double
-  %".23" = call i32 (i8*, ...) @"printf"(i8* %".21", [5 x i8]* %".16", i32 %".17", double %".22")
+  %".2" = alloca i32
+  store i32 0, i32* %".2"
+  %".4" = alloca i32
+  store i32 0, i32* %".4"
+  br label %"for_loop_entry_1"
+for_loop_entry_1:
+  %".7" = load i32, i32* %".4"
+  %".8" = load i32, i32* %".2"
+  %".9" = add i32 %".8", %".7"
+  store i32 %".9", i32* %".2"
+  %".11" = load i32, i32* %".4"
+  %".12" = add i32 %".11", 1
+  store i32 %".12", i32* %".4"
+  %".14" = load i32, i32* %".4"
+  %".15" = icmp slt i32 %".14", 10
+  br i1 %".15", label %"for_loop_entry_1", label %"for_loop_otherwise_1"
+for_loop_otherwise_1:
+  %".17" = load i32, i32* %".2"
+  %".18" = alloca [13 x i8]*
+  store [13 x i8]* @"__str_2", [13 x i8]** %".18"
+  %".20" = bitcast [13 x i8]* @"__str_2" to i8*
+  %".21" = call i32 (i8*, ...) @"printf"(i8* %".20", i32 %".17")
   ret i32 0
 }
 
-@"__str_1" = internal constant [5 x i8] c"John\00"
-@"__str_2" = internal constant [33 x i8] c"%s is %d years old.\0a num is %.1f\00"
+@"__str_2" = internal constant [13 x i8] c"Suma este %i\00"

@@ -2,9 +2,9 @@ from typing import List, Tuple, Optional
 
 from llvmlite import ir
 
-from __imports__ import *
+from core_pipeline.__imports__ import *
 
-from Environment import Environment
+from core_pipeline.environment import Environment
 
 class Compiler:
     def __init__(self) -> None:

@@ -1,8 +1,8 @@
 import unittest
 from pipeline.executor import execute_code
-from Compiler import Compiler
-from Parser import Parser
-from Lexer import Lexer
+from core_pipeline.compiler import Compiler
+from core_pipeline.parser import Parser
+from core_pipeline.lexer import Lexer
 
 class TestEdgeCases(unittest.TestCase):
     def compile_and_execute(self, code):

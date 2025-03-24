@@ -1,5 +1,5 @@
 import json
-from Parser import Parser
+from core_pipeline.parser import Parser
 
 def debug_parser(parser: Parser, program) -> None:
     print('===== PARSER DEBUG =====')

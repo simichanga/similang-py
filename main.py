@@ -1,7 +1,7 @@
-from Lexer import Lexer
-from Parser import Parser
-from Compiler import Compiler
-from AST import Program
+from core_pipeline.lexer import Lexer
+from core_pipeline.parser import Parser
+from core_pipeline.compiler import Compiler
+from core_pipeline.ast import Program
 
 from pipeline.lexer_debugger import debug_lexer
 from pipeline.parser_debugger import debug_parser

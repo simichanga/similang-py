@@ -1,9 +1,9 @@
-from Lexer import Lexer
-from Token import TokenType, Token
+from core_pipeline.lexer import Lexer
+from core_pipeline.token import TokenType, Token
 from typing import Callable, List, Union, Any, Set, Type
 from enum import Enum, auto
 
-from __imports__ import *
+from core_pipeline.__imports__ import *
 
 from typing import Dict, Optional
 
