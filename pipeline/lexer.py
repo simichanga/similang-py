@@ -1,4 +1,4 @@
-from core_pipeline.token import Token, TokenType, lookup_ident
+from pipeline.token import Token, TokenType, lookup_ident
 from typing import Any
 
 class Lexer:
@@ -14,7 +14,7 @@ class Lexer:
         self.__read_char()
 
     def __read_char(self) -> None:
-        """ Advances the core_pipeline by one character. """
+        """ Advances the pipeline by one character. """
         self.current_char = self.source[self.read_position] if self.read_position < len(self.source) else None
         self.position = self.read_position
         self.read_position += 1
@@ -92,7 +92,7 @@ class Lexer:
 
     def __read_string(self) -> Token:
         """ Reads a string, handling escape sequences. """
-        start_pos = self.position + 1
+        # start_pos = self.position + 1
         escaped = False
         result = ""
 
@@ -128,7 +128,7 @@ class Lexer:
             self.__skip_comment()
             return self.next_token()
 
-        tok = None
+        # tok = None
 
         match self.current_char:
             case '+':

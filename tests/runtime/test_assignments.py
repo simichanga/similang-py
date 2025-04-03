@@ -3,10 +3,10 @@
 import unittest
 import io
 import sys
-from core_pipeline.lexer import Lexer
-from core_pipeline.parser import Parser
-from core_pipeline.compiler import Compiler
-from pipeline.executor import execute_code
+from pipeline.lexer import Lexer
+from pipeline.parser import Parser
+from pipeline.compiler import Compiler
+from utils.executor import execute_code
 
 class TestAssignments(unittest.TestCase):
     def compile_and_execute(self, code):

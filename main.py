@@ -1,10 +1,10 @@
-from core_pipeline.lexer import Lexer
-from core_pipeline.parser import Parser
-from core_pipeline.compiler import Compiler
-from core_pipeline.ast import Program
+from pipeline.lexer import Lexer
+from pipeline.parser import Parser
+from pipeline import Compiler
+from pipeline.ast import Program
 
-from pipeline.debugger import debug_lexer, debug_parser, debug_compiler
-from pipeline.executor import execute_code
+from utils.debugger import debug_lexer, debug_parser, debug_compiler
+from utils.executor import execute_code
 
 from utils.config import Config
 
@@ -27,7 +27,7 @@ def load_code(file_path: str) -> str:
 
 # Configure benchmarking
 def benchmark_stage(stage_name, func, *args, **kwargs) -> any:
-    """Benchmark a specific stage of the compiler."""
+    """Benchmark a specific stage of the compilation_unit."""
     if Config.SHOW_BENCHMARK:
         start_time = time.time()
         result = func(*args, **kwargs)

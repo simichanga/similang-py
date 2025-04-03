@@ -1,9 +1,9 @@
 import unittest
 
-from pipeline.executor import execute_code  # Assuming "execute_code" can run the compiled code and return results
-from core_pipeline.compiler import Compiler
-from core_pipeline.parser import Parser
-from core_pipeline.lexer import Lexer
+from utils.executor import execute_code  # Assuming "execute_code" can run the compiled code and return results
+from pipeline.compiler import Compiler
+from pipeline.parser import Parser
+from pipeline.lexer import Lexer
 
 class TestArithmeticOperations(unittest.TestCase):
     def compile_and_execute(self, code) -> int:

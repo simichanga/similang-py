@@ -1,8 +1,8 @@
 import unittest
-from pipeline.executor import execute_code
-from core_pipeline.compiler import Compiler
-from core_pipeline.parser import Parser
-from core_pipeline.lexer import Lexer
+from utils.executor import execute_code
+from pipeline.compiler import Compiler
+from pipeline.parser import Parser
+from pipeline.lexer import Lexer
 
 # TODO implement implicit conversion
 class TestComparisonOperators(unittest.TestCase):

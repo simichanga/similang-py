@@ -1,5 +1,5 @@
-from core_pipeline.ast import AbstractLiteral
-from core_pipeline.__imports__ import *
+from pipeline.ast import AbstractLiteral
+from pipeline.__imports__ import *
 
 class Optimizer:
     @staticmethod

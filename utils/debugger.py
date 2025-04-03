@@ -1,5 +1,5 @@
-from core_pipeline.lexer import Lexer
-from core_pipeline.parser import Parser
+from pipeline.lexer import Lexer
+from pipeline.parser import Parser
 import json
 from llvmlite import ir
 
@@ -24,7 +24,7 @@ def debug_parser(parser: Parser, program) -> None:
 
 def debug_compiler(module: ir.Module) -> None:
     """
-    Debugs the compiler by writing the LLVM IR to a file.
+    Debugs the compilation_unit by writing the LLVM IR to a file.
     """
     print('===== COMPILER DEBUG =====')
     path = 'debug/ir.ll'

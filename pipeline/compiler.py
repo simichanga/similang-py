@@ -2,21 +2,11 @@ from typing import List, Tuple, Optional
 
 from llvmlite import ir
 
-from core_pipeline.__imports__ import *
-
-from core_pipeline.environment import Environment
-
-class CompileError(Exception):
-    def __init__(self, message: str):
-        super().__init__(message)
-        self.message = message
-        # self.line_no = line_no
-        # self.error_type = error_type
-
-    def __str__(self):
-        # return f"{self.error_type} at line {self.line_no}: {self.message}"
-        return f"{self.message}"
-
+from pipeline.ast import Node, NodeType, Program, ExpressionStatement, Expression, ReturnStatement, FunctionStatement, \
+    BlockStatement, FunctionParameter, AssignStatement, IfStatement, WhileStatement, ForStatement, LetStatement, \
+    BreakStatement, ContinueStatement, InfixExpression, CallExpression, PrefixExpression, PostfixExpression, \
+    IdentifierLiteral, IntegerLiteral, FloatLiteral, BooleanLiteral, StringLiteral
+from pipeline.environment import Environment
 
 class Compiler:
     def __init__(self) -> None:
@@ -77,7 +67,7 @@ class Compiler:
         return self.counter
 
     def add_error(self, message: str):
-        self.errors.append(CompileError(message))
+        self.errors.append(message)
 
     def compile(self, node: Node) -> None:
         match node.type():
@@ -115,7 +105,8 @@ class Compiler:
                 self.__visit_postfix_expression(node)
 
     # region Visit Methods
-    def __visit_program(self, node: Program) -> None:
+    def __visit_program(self, node:
+    Program) -> None:
         for stmt in node.statements:
             self.compile(stmt)
 

@@ -5,12 +5,16 @@ fn factorial(n: int) -> int {
     return n * factorial(n - 1);
 }
 
-fn main() -> int {
+fn main() -> void {
     let n: int = 2;
-    n += 3;
+    n += 3 + 1.0;
+
     let out: int = factorial(n);
     printf("Factorial de %i este %i \n", n, out);
 
     let pi: float = 3.1415;
     printf("Numarul %f este mai mic decat 4.0? %b \n", pi, pi < 4.0);
+
+    let lmao: bool = true;
+    printf("Lmao este true? %b", true == lmao);
 }

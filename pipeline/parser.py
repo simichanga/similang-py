@@ -1,9 +1,17 @@
-from core_pipeline.lexer import Lexer
-from core_pipeline.token import TokenType, Token
+from pipeline.lexer import Lexer
+from pipeline.token import TokenType, Token
 from typing import Callable, List, Union, Any, Set, Type
 from enum import Enum, auto
 
-from core_pipeline.__imports__ import *
+from pipeline.ast import (
+    Statement, Expression, Program,
+    ExpressionStatement, LetStatement, FunctionStatement, ReturnStatement,
+    BlockStatement, AssignStatement, IfStatement, WhileStatement, ForStatement,
+    BreakStatement, ContinueStatement,
+    InfixExpression, PrefixExpression, PostfixExpression, CallExpression,
+    IntegerLiteral, FloatLiteral, IdentifierLiteral, BooleanLiteral, StringLiteral,
+    FunctionParameter
+)
 
 from typing import Dict, Optional
 
@@ -355,8 +363,8 @@ class Parser:
         return AssignStatement(ident=ident, operator=operator, right_value=right_value)
 
     def __parse_if_statement(self) -> Optional[IfStatement]:
-        condition: Optional[Expression] = None
-        consequence: Optional[BlockStatement] = None
+        condition: Optional[Expression]
+        consequence: Optional[BlockStatement]
         alternative: Optional[BlockStatement] = None
 
         self.__next_token()
@@ -379,8 +387,8 @@ class Parser:
         return IfStatement(condition, consequence, alternative)
 
     def __parse_while_statement(self) -> Optional[WhileStatement]:
-        condition: Optional[Expression] = None
-        body: Optional[BlockStatement] = None
+        condition: Optional[Expression]
+        body: Optional[BlockStatement]
 
         self.__next_token()
 
