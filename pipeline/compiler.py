@@ -6,6 +6,7 @@ from pipeline.ast import Node, NodeType, Program, ExpressionStatement, Expressio
     BlockStatement, FunctionParameter, AssignStatement, IfStatement, WhileStatement, ForStatement, LetStatement, \
     BreakStatement, ContinueStatement, InfixExpression, CallExpression, PrefixExpression, PostfixExpression, \
     IdentifierLiteral, IntegerLiteral, FloatLiteral, BooleanLiteral, StringLiteral
+from pipeline.compilation_unit.llvm_initializer import LLVMInitializer
 from pipeline.environment import Environment
 
 class Compiler:
@@ -20,45 +21,21 @@ class Compiler:
         }
 
         self.module: ir.Module = ir.Module('main')
-
         self.builder: ir.IRBuilder = ir.IRBuilder()
-
         self.counter: int = 0
-
-        self.env: Environment = Environment()
-
         self.errors: List[str] = []
-
         self.breakpoints: List[ir.Block] = []
         self.continues: List[ir.Block] = []
+
+        self.env: Environment = Environment()
+        self.llvm_initializer = LLVMInitializer()
 
         self.__initialize_builtins()
 
     def __initialize_builtins(self) -> None:
-        def __init_print() -> ir.Function:
-            fnty: ir.FunctionType = ir.FunctionType(
-                self.type_map['int'],
-                [ir.IntType(8).as_pointer()],
-                var_arg = True
-            )
-            return ir.Function(self.module, fnty, 'printf')
+        self.env.define('printf', self.llvm_initializer.init_printf(self.module, self.type_map), ir.IntType(32))
 
-        def __init__booleans() -> tuple[ir.GlobalVariable, ir.GlobalVariable]:
-            bool_type: ir.Type = self.type_map['bool']
-
-            true_var = ir.GlobalVariable(self.module, bool_type, 'true')
-            true_var.initializer = ir.Constant(bool_type, 1)
-            true_var.global_constant = True
-
-            false_var = ir.GlobalVariable(self.module, bool_type, 'false')
-            false_var.initializer = ir.Constant(bool_type, 0)
-            false_var.global_constant = True
-
-            return true_var, false_var
-
-        self.env.define('printf', __init_print(), ir.IntType(32))
-
-        true_var, false_var = __init__booleans()
+        true_var, false_var = self.llvm_initializer.init_booleans(self.module, self.type_map)
         self.env.define('true', true_var, true_var.type)
         self.env.define('false', false_var, false_var.type)
 
