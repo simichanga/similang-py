@@ -1,4 +1,5 @@
-from typing import List, Tuple, Optional
+import re
+from typing import List, Tuple, Optional, Callable, Dict
 
 from llvmlite import ir
 
@@ -15,7 +16,6 @@ class Compiler:
             'int': ir.IntType(32),
             'float': ir.FloatType(),
             'bool': ir.IntType(1),
-
             'str': ir.PointerType(ir.IntType(8)),
             'void': ir.VoidType(),
         }
@@ -46,40 +46,22 @@ class Compiler:
     def add_error(self, message: str):
         self.errors.append(message)
 
+    # Dictionaries are for nerds
     def compile(self, node: Node) -> None:
-        match node.type():
-            case NodeType.Program:
-                self.__visit_program(node)
+        # Convert the node type to snake_case
+        type_name = node.type().name
 
-            case NodeType.ExpressionStatement:
-                self.__visit_expression_statement(node)
-            case NodeType.LetStatement:
-                self.__visit_let_statement(node)
-            case NodeType.FunctionStatement:
-                self.__visit_function_statement(node)
-            case NodeType.BlockStatement:
-                self.__visit_block_statement(node)
-            case NodeType.ReturnStatement:
-                self.__visit_return_statement(node)
-            case NodeType.AssignStatement:
-                self.__visit_assign_statement(node)
-            case NodeType.IfStatement:
-                self.__visit_if_statement(node)
-            case NodeType.WhileStatement:
-                self.__visit_while_statement(node)
-            case NodeType.ForStatement:
-                self.__visit_for_statement(node)
-            case NodeType.BreakStatement:
-                self.__visit_break_statement(node)
-            case NodeType.ContinueStatement:
-                self.__visit_continue_statement(node)
+        # Convert camelCase to snake_case (e.g., PostfixExpression -> postfix_expression)
+        method_name = f"__visit_{re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', type_name).lower()}"
 
-            case NodeType.InfixExpression:
-                self.__visit_infix_expression(node)
-            case NodeType.CallExpression:
-                self.__visit_call_expression(node)
-            case NodeType.PostfixExpression:
-                self.__visit_postfix_expression(node)
+        # Handle name mangling for private methods (e.g., __visit_program -> _Compiler__visit_program)
+        mangled_method_name = f"_{self.__class__.__name__}__{method_name[2:]}"
+
+        # Check if the method exists using hasattr
+        if hasattr(self, mangled_method_name):
+            getattr(self, mangled_method_name)(node)  # Call the method dynamically
+        else:
+            print(f"Unhandled node type: {node.type()}")
 
     # region Visit Methods
     def __visit_program(self, node:
