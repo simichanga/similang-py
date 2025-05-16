@@ -42,7 +42,7 @@ class Node(ABC):
         return self.node_type
 
     def json(self) -> dict:
-        result = {'type': self.type().value}
+        result = {'type': self.type().value}  # Ensure we use .value here
         for attr, value in vars(self).items():
             if attr.startswith("_"):
                 continue
@@ -51,8 +51,14 @@ class Node(ABC):
             elif isinstance(value, list):
                 result[attr] = [v.json() if isinstance(v, Node) else v for v in value]
             else:
-                result[attr] = value
+                # Ensure enum values are serialized properly
+                if isinstance(value, Enum):
+                    result[attr] = value.value
+                else:
+                    result[attr] = value
         return result
+
+
 
 class Statement(Node):
     pass
