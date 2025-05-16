@@ -9,17 +9,14 @@ from pipeline.ast import Node, NodeType, Program, ExpressionStatement, Expressio
     IdentifierLiteral, IntegerLiteral, FloatLiteral, BooleanLiteral, StringLiteral
 from pipeline.compilation_unit.llvm_initializer import LLVMInitializer
 from pipeline.environment import Environment
+from pipeline.type_system import TypeSystem
 
 class Compiler:
     def __init__(self) -> None:
-        self.type_map: dict[str, ir.Type] = {
-            'int': ir.IntType(32),
-            'float': ir.FloatType(),
-            'bool': ir.IntType(1),
-            'str': ir.PointerType(ir.IntType(8)),
-            'void': ir.VoidType(),
-        }
-
+        self.type_map = None
+        self.type_system = TypeSystem()
+        
+        # 替换所有对self.type_map的直接访问
         self.module: ir.Module = ir.Module('main')
         self.builder: ir.IRBuilder = ir.IRBuilder()
         self.counter: int = 0
@@ -33,9 +30,10 @@ class Compiler:
         self.__initialize_builtins()
 
     def __initialize_builtins(self) -> None:
-        self.env.define('printf', self.llvm_initializer.init_printf(self.module, self.type_map), ir.IntType(32))
+        printf_func = self.llvm_initializer.init_printf(self.module, self.type_system.type_map)
+        self.env.define('printf', printf_func, self.type_system.get_type('int'))
 
-        true_var, false_var = self.llvm_initializer.init_booleans(self.module, self.type_map)
+        true_var, false_var = self.llvm_initializer.init_booleans(self.module, self.type_system.type_map)
         self.env.define('true', true_var, true_var.type)
         self.env.define('false', false_var, false_var.type)
 
@@ -76,14 +74,14 @@ class Compiler:
     def __visit_let_statement(self, node: ExpressionStatement) -> None:
         name: str = node.name.value
         value: Expression = node.value
-        value_type = node.value_type # TODO implement when actually doing type checking
+        value_type = node.value_type
 
-        value, Type = self.__resolve_value(node = value)
+        value, Type = self.__resolve_value(node=value)
 
         if self.env.lookup(name) is None:
             # Define and allocate the variable
-            if value_type == 'bool': # TODO ugly hotfix for bool assignment
-                ptr = self.builder.alloca(ir.IntType(1))  # Allocate i1 type for boolean
+            if value_type == 'bool':  # TODO ugly hotfix for bool assignment
+                ptr = self.builder.alloca(self.type_system.get_type('bool'))  # Allocate i1 type for boolean
             else:
                 ptr = self.builder.alloca(Type)
 
@@ -104,12 +102,12 @@ class Compiler:
         return_value, return_type = self.__resolve_value(node.return_value)
 
         # Ensure the return type matches the function's return type
-        if isinstance(return_type, ir.FloatType) and self.type_map['float'] != return_type:
+        if isinstance(return_type, ir.FloatType) and self.type_system.get_type('float') != return_type:
             return_value = self.builder.sitofp(return_value, ir.FloatType())
-            return_type = self.type_map['float']
-        elif isinstance(return_type, ir.IntType) and self.type_map['int'] != return_type:
+            return_type = self.type_system.get_type('float')
+        elif isinstance(return_type, ir.IntType) and self.type_system.get_type('int') != return_type:
             return_value = self.builder.sitofp(return_value, ir.FloatType())
-            return_type = self.type_map['float']
+            return_type = self.type_system.get_type('float')
 
         self.builder.ret(return_value)
 
@@ -119,12 +117,12 @@ class Compiler:
         params: List[FunctionParameter] = node.parameters
 
         param_names: List[str] = [p.name for p in params]
-        param_types: List[ir.Type] = [self.type_map[p.value_type] for p in params]
+        param_types: List[ir.Type] = [self.type_system.get_type(p.value_type) for p in params]
 
-        return_type: ir.Type = self.type_map[node.return_type]
+        return_type: ir.Type = self.type_system.get_type(node.return_type)
 
         fnty: ir.FunctionType = ir.FunctionType(return_type, param_types)
-        func: ir.Function = ir.Function(self.module, fnty, name = name)
+        func: ir.Function = ir.Function(self.module, fnty, name=name)
 
         block: ir.Block = func.append_basic_block(f'{name}_entry')
 
@@ -204,27 +202,21 @@ class Compiler:
         orig_is_int = isinstance(orig_type, ir.IntType)
         orig_is_float = isinstance(orig_type, ir.FloatType)
 
-        # Helper function: Type conversion
-        def convert_to_int(value):
-            return self.builder.fptosi(value, ir.IntType(32)) if isinstance(value.type, ir.FloatType) else value
-        def convert_to_float(value):
-            return self.builder.sitofp(value, ir.FloatType()) if isinstance(value.type, ir.IntType) else value
-
         # Helper function: Perform operation
         def perform_operation(op, left, right):
             if op == '=':
                 return right
             elif op == '+=':
-                return self.builder.fadd(convert_to_float(left), convert_to_float(right))
+                return self.builder.fadd(self.type_system.convert_to_float(self.builder, left), self.type_system.convert_to_float(self.builder, right))
             elif op == '-=':
-                return self.builder.fsub(convert_to_float(left), convert_to_float(right))
+                return self.builder.fsub(self.type_system.convert_to_float(self.builder, left), self.type_system.convert_to_float(self.builder, right))
             elif op == '*=':
-                return self.builder.fmul(convert_to_float(left), convert_to_float(right))
+                return self.builder.fmul(self.type_system.convert_to_float(self.builder, left), self.type_system.convert_to_float(self.builder, right))
             elif op == '/=':
                 if right == 0:
                     self.errors.append(f'COMPILE ERROR: Division by zero for identifier {name}')
                     return None
-                return self.builder.fdiv(convert_to_float(left), convert_to_float(right))
+                return self.builder.fdiv(self.type_system.convert_to_float(self.builder, left), self.type_system.convert_to_float(self.builder, right))
 
         # Perform the operation
         value = perform_operation(operator, orig_value, right_value)
@@ -233,9 +225,9 @@ class Compiler:
 
         # Ensure the types match before storing
         if isinstance(value.type, ir.FloatType) and isinstance(orig_type, ir.IntType):
-            value = convert_to_int(value)
+            value = self.type_system.convert_to_int(self.builder, value)
         elif isinstance(value.type, ir.IntType) and isinstance(orig_type, ir.FloatType):
-            value = convert_to_float(value)
+            value = self.type_system.convert_to_float(self.builder, value)
 
         # Store the result
         self.builder.store(value, var_ptr)
@@ -318,43 +310,21 @@ class Compiler:
         left_value, left_type = self.__resolve_value(node.left_node)
         right_value, right_type = self.__resolve_value(node.right_node)
 
-        # Implicit type conversion for booleans
-        if isinstance(left_type, ir.IntType) and left_type.width == 1:  # i1 (bool)
-            left_value = self.builder.zext(left_value, ir.IntType(32))  # Zero-extend to i32
-            left_type = ir.IntType(32)
-        elif isinstance(left_type, ir.FloatType) and isinstance(left_value,
-                                                                ir.IntType) and left_type.width == 1:  # i1 (bool)
-            left_value = self.builder.zext(left_value, ir.IntType(32))  # Zero-extend to i32, then convert to float
-            left_value = self.builder.sitofp(left_value, ir.FloatType())
-            left_type = ir.FloatType()
-
-        if isinstance(right_type, ir.IntType) and right_type.width == 1:  # i1 (bool)
-            right_value = self.builder.zext(right_value, ir.IntType(32))  # Zero-extend to i32
-            right_type = ir.IntType(32)
-        elif isinstance(right_type, ir.FloatType) and isinstance(right_value,
-                                                                 ir.IntType) and right_type.width == 1:  # i1 (bool)
-            right_value = self.builder.zext(right_value, ir.IntType(32))  # Zero-extend to i32, then convert to float
-            right_value = self.builder.sitofp(right_value, ir.FloatType())
-            right_type = ir.FloatType()
-
-        # Implicit conversion between int and float
-        if isinstance(left_type, ir.IntType) and isinstance(right_type, ir.FloatType):
-            left_value = self.builder.sitofp(left_value, ir.FloatType())
-            left_type = ir.FloatType()
-        elif isinstance(left_type, ir.FloatType) and isinstance(right_type, ir.IntType):
-            right_value = self.builder.sitofp(right_value, ir.FloatType())
-            right_type = ir.FloatType()
+        # Implicit type conversion for booleans and between int/float
+        left_value, right_value = self.type_system.coerce_types(self.builder, left_value, right_value)
+        left_type = left_value.type
+        right_type = right_value.type
 
         value, result_type = None, None
 
         # Handle integer operations
         if isinstance(left_type, ir.IntType) and isinstance(right_type, ir.IntType):
-            result_type = self.type_map['int']
+            result_type = self.type_system.get_type('int')
             value = self.__process_int_operations(operator, left_value, right_value)
 
         # Handle floating-point operations
         elif isinstance(left_type, ir.FloatType) and isinstance(right_type, ir.FloatType):
-            result_type = self.type_map['float']
+            result_type = self.type_system.get_type('float')
             value = self.__process_float_operations(operator, left_value, right_value)
 
         # Error if types are incompatible
@@ -409,7 +379,7 @@ class Compiler:
             if not types:
                 raise ValueError("'printf' requires at least one argument")
             ret = self.builtin_printf(params=args, return_type=types[0])
-            ret_type = self.type_map['int']
+            ret_type = self.type_system.get_type('int')
         else:
             # Lookup custom functions in the environment
             func, ret_type = self.env.lookup(name)
@@ -425,23 +395,25 @@ class Compiler:
 
         Type, value = None, None
         if isinstance(right_type, ir.FloatType):
-            Type = ir.FloatType()
+            Type = self.type_system.get_type('float')
             match operator:
                 case '-': value = self.builder.fmul(right_value, ir.Constant(ir.FloatType(), -1.0))
                 case '!': value = ir.Constant(ir.IntType(1), 0)
         elif isinstance(right_type, ir.IntType):
+            Type = self.type_system.get_type('int')
             match operator:
                 case '-': value = self.builder.mul(right_value, ir.Constant(ir.IntType(32), -1))
                 case '!': value = self.builder.not_(right_value)
 
         return value, Type
 
-    def __visit_postfix_expression(self, node: PostfixExpression) -> None:
-        left_node: IdentifierLiteral = node.left_node # this is an expression but should be an identifier literal
+    def __visit_postfix_expression(self, node: PostfixExpression) -> tuple[ir.Value, ir.Type]:
+        left_node: IdentifierLiteral = node.left_node
         operator: str = node.operator
 
         if self.env.lookup(left_node.value) is None:
             self.add_error(f'Identifier {left_node.value} has not been declared before it was used in a PostfixExpression')
+            return None, None
 
         var_ptr, _ = self.env.lookup(left_node.value)
         orig_value = self.builder.load(var_ptr)
@@ -450,16 +422,17 @@ class Compiler:
         match operator:
             case '++':
                 if isinstance(orig_value.type, ir.IntType):
-                    value = self.builder.add(orig_value, ir.Constant(ir.IntType(32), 1))
+                    value = self.builder.add(orig_value, ir.Constant(self.type_system.get_type('int'), 1))
                 elif isinstance(orig_value.type, ir.FloatType):
-                    value = self.builder.fadd(orig_value, ir.Constant(ir.FloatType(), 1.0))
+                    value = self.builder.fadd(orig_value, ir.Constant(self.type_system.get_type('float'), 1.0))
             case '--':
                 if isinstance(orig_value.type, ir.IntType):
-                    value = self.builder.sub(orig_value, ir.Constant(ir.IntType(32), 1))
+                    value = self.builder.sub(orig_value, ir.Constant(self.type_system.get_type('int'), 1))
                 elif isinstance(orig_value.type, ir.FloatType):
-                    value = self.builder.fsub(orig_value, ir.Constant(ir.FloatType(), 1.0))
+                    value = self.builder.fsub(orig_value, ir.Constant(self.type_system.get_type('float'), 1.0))
 
         self.builder.store(value, var_ptr)
+        return value, value.type if value is not None else None
     # endregion
 
     # endregion
@@ -469,11 +442,11 @@ class Compiler:
         match node.type():
             case NodeType.IntegerLiteral:
                 node: IntegerLiteral = node
-                value, Type = node.value, self.type_map['int']
+                value, Type = node.value, self.type_system.get_type('int')
                 return ir.Constant(Type, value), Type
             case NodeType.FloatLiteral:
                 node: FloatLiteral = node
-                value, Type = node.value, self.type_map['float']
+                value, Type = node.value, self.type_system.get_type('float')
                 return ir.Constant(Type, value), Type
             case NodeType.IdentifierLiteral:
                 node: IdentifierLiteral = node
@@ -481,7 +454,7 @@ class Compiler:
                 return self.builder.load(ptr), Type
             case NodeType.BooleanLiteral:
                 node: BooleanLiteral = node
-                return ir.Constant(ir.IntType(1), 1 if node.value else 0), ir.IntType(1)
+                return ir.Constant(self.type_system.get_type('bool'), 1 if node.value else 0), self.type_system.get_type('bool')
             case NodeType.StringLiteral:
                 node: StringLiteral = node
                 string, Type = self.__convert_string(node.value)
@@ -496,12 +469,13 @@ class Compiler:
                 return self.__visit_postfix_expression(node)
 
     def __convert_string(self, string: str) -> tuple[ir.Constant, ir.ArrayType]:
-        string = string.replace('\\n', '\n\0')
+        string = string.replace('\n', '\n\0')
 
         fmt: str = f'{string}\0'
-        c_fmt: ir.Constant = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)), bytearray(fmt.encode('utf8')))
+        c_fmt: ir.Constant = ir.Constant(ir.ArrayType(self.type_system.get_type('str').pointee, len(fmt)), 
+                                  bytearray(fmt.encode('utf8')))
 
-        global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name = f'__str_{self.__increment_counter()}')
+        global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=f'__str_{self.__increment_counter()}')
         global_fmt.linkage = 'internal'
         global_fmt.global_constant = True
         global_fmt.initializer = c_fmt
@@ -520,10 +494,10 @@ class Compiler:
             c_fmt: ir.LoadInstr = params[0]
             g_var_ptr = c_fmt.operands[0]
             string_val = self.builder.load(g_var_ptr)
-            fmt_arg = self.builder.bitcast(string_val, ir.IntType(8).as_pointer())
+            fmt_arg = self.builder.bitcast(string_val, self.type_system.get_type('str'))
         else:
             # Convert the format string to a global variable
-            fmt_arg = self.builder.bitcast(self.module.get_global(f'__str_{self.counter}'), ir.IntType(8).as_pointer())
+            fmt_arg = self.builder.bitcast(self.module.get_global(f'__str_{self.counter}'), self.type_system.get_type('str'))
 
         # Prepare the arguments for printf
         args = [fmt_arg]

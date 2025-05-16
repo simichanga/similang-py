@@ -43,18 +43,18 @@ main_entry:
   store i32 %".12", i32* %".13"
   %".15" = load i32, i32* %".2"
   %".16" = load i32, i32* %".13"
-  %".17" = alloca [26 x i8]*
-  store [26 x i8]* @"__str_1", [26 x i8]** %".17"
-  %".19" = bitcast [26 x i8]* @"__str_1" to i8*
+  %".17" = alloca [27 x i8]*
+  store [27 x i8]* @"__str_1", [27 x i8]** %".17"
+  %".19" = bitcast [27 x i8]* @"__str_1" to i8*
   %".20" = call i32 (i8*, ...) @"printf"(i8* %".19", i32 %".15", i32 %".16")
   %".21" = alloca float
   store float 0x400921cac0000000, float* %".21"
   %".23" = load float, float* %".21"
   %".24" = load float, float* %".21"
   %".25" = fcmp olt float %".24", 0x4010000000000000
-  %".26" = alloca [40 x i8]*
-  store [40 x i8]* @"__str_2", [40 x i8]** %".26"
-  %".28" = bitcast [40 x i8]* @"__str_2" to i8*
+  %".26" = alloca [41 x i8]*
+  store [41 x i8]* @"__str_2", [41 x i8]** %".26"
+  %".28" = bitcast [41 x i8]* @"__str_2" to i8*
   %".29" = fpext float %".23" to double
   %".30" = call i32 (i8*, ...) @"printf"(i8* %".28", double %".29", i1 %".25")
   %".31" = alloca i1
@@ -70,6 +70,6 @@ main_entry:
   ret void
 }
 
-@"__str_1" = internal constant [26 x i8] c"Factorial de %i este %i \0a\00"
-@"__str_2" = internal constant [40 x i8] c"Numarul %f este mai mic decat 4.0? %b \0a\00"
+@"__str_1" = internal constant [27 x i8] c"Factorial de %i este %i \0a\00\00"
+@"__str_2" = internal constant [41 x i8] c"Numarul %f este mai mic decat 4.0? %b \0a\00\00"
 @"__str_3" = internal constant [19 x i8] c"Lmao este true? %b\00"
