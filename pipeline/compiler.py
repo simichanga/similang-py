@@ -506,6 +506,8 @@ class Compiler:
             if isinstance(param.type, ir.FloatType):
                 # Bitcast float to double for printf compatibility
                 param = self.builder.fpext(param, ir.DoubleType())
+            elif isinstance(param.type, ir.IntType) and param.type.width == 1:
+                param = self.builder.zext(param, ir.IntType(32))
             args.append(param)
 
         return self.builder.call(func, args)
