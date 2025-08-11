@@ -1,0 +1,5 @@
+AST Summary
+-----------
+Generated at: 20250811T211906411924Z
+Node counts:
+  Program: 1

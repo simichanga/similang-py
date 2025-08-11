@@ -1,0 +1,11 @@
+[tool.poetry]
+name = "similang"
+version = "0.1.0"
+description = "Similang compiler (refactor)"
+
+[tool.poetry.dependencies]
+python = ">=3.12"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0"
+llvmlite = "^0.43"

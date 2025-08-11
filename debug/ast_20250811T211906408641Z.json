@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "timestamp_utc": "2025-08-11T21:19:06.408688Z",
+    "python_version": "3.13.5 (main, Jun 21 2025, 09:35:00) [GCC 15.1.1 20250425]",
+    "llvmlite_version": null,
+    "git_commit": "b612cc9",
+    "config": {
+      "DEBUG": true,
+      "LEXER_DEBUG": true,
+      "PARSER_DEBUG": true,
+      "SEMANTIC_DEBUG": true,
+      "CODEGEN_DEBUG": true
+    }
+  },
+  "ast": {
+    "type": "Program",
+    "statements": [
+      {
+        "name": {
+          "value": "main"
+        },
+        "parameters": [],
+        "body": {
+          "statements": [
+            {
+              "name": {
+                "value": "x"
+              },
+              "value": {
+                "value": 40
+              },
+              "value_type": "int"
+            },
+            {
+              "name": {
+                "value": "y"
+              },
+              "value": {
+                "value": 2
+              },
+              "value_type": "int"
+            },
+            {
+              "return_value": {
+                "left_node": {
+                  "value": "x"
+                },
+                "operator": "+",
+                "right_node": {
+                  "value": "y"
+                }
+              }
+            }
+          ]
+        },
+        "return_type": "int"
+      }
+    ]
+  }
+}
