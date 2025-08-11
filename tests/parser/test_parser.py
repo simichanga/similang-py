@@ -19,13 +19,13 @@ class TestForLoopWithPostfixIncrement(unittest.TestCase):
         """
         lexer = Lexer(source=code)
         parser = Parser(lexer=lexer)
-        program = parser.parse_program()
+        ast = parser.parse_program()
 
         if len(parser.errors) > 0:
             self.fail(f"Parser errors: {parser.errors}")
 
         compiler = Compiler()
-        compiler.compile(node=program)
+        compiler.compile(node=ast)
 
         # Execute and assert the result
         result = execute_code(compiler.module)

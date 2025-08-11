@@ -103,12 +103,12 @@ class Compiler:
         return_value, return_type = self.__resolve_value(node.return_value)
 
         # Ensure the return type matches the function's return type
-        if isinstance(return_type, ir.FloatType) and self.type_system.get_type('float') != return_type:
-            return_value = self.builder.sitofp(return_value, ir.FloatType())
-            return_type = self.type_system.get_type('float')
-        elif isinstance(return_type, ir.IntType) and self.type_system.get_type('int') != return_type:
-            return_value = self.builder.sitofp(return_value, ir.FloatType())
-            return_type = self.type_system.get_type('float')
+        # if isinstance(return_type, ir.FloatType) and self.type_system.get_type('float') != return_type:
+        #     return_value = self.builder.sitofp(return_value, ir.FloatType())
+        #     return_type = self.type_system.get_type('float')
+        if isinstance(return_type, ir.IntType):
+            return_value = self.builder.zext(return_value, ir.IntType(32))
+            return_type = self.type_system.get_type('int')
 
         self.builder.ret(return_value)
 

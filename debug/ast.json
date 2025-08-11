@@ -8,110 +8,6 @@
             "name": {
                 "type": "IdentifierLiteral",
                 "node_type": "IdentifierLiteral",
-                "value": "factorial"
-            },
-            "parameters": [
-                {
-                    "type": "FunctionParameter",
-                    "node_type": "FunctionParameter",
-                    "name": "n",
-                    "value": null,
-                    "value_type": "int"
-                }
-            ],
-            "body": {
-                "type": "BlockStatement",
-                "node_type": "BlockStatement",
-                "statements": [
-                    {
-                        "type": "ExpressionStatement",
-                        "node_type": "ExpressionStatement",
-                        "expr": {
-                            "type": "IfStatement",
-                            "node_type": "IfStatement",
-                            "condition": {
-                                "type": "InfixExpression",
-                                "node_type": "InfixExpression",
-                                "left_node": {
-                                    "type": "IdentifierLiteral",
-                                    "node_type": "IdentifierLiteral",
-                                    "value": "n"
-                                },
-                                "operator": "==",
-                                "right_node": {
-                                    "type": "IntegerLiteral",
-                                    "node_type": "IntegerLiteral",
-                                    "value": 0
-                                }
-                            },
-                            "consequence": {
-                                "type": "BlockStatement",
-                                "node_type": "BlockStatement",
-                                "statements": [
-                                    {
-                                        "type": "ReturnStatement",
-                                        "node_type": "ReturnStatement",
-                                        "return_value": {
-                                            "type": "IntegerLiteral",
-                                            "node_type": "IntegerLiteral",
-                                            "value": 1
-                                        }
-                                    }
-                                ]
-                            },
-                            "alternative": null
-                        }
-                    },
-                    {
-                        "type": "ReturnStatement",
-                        "node_type": "ReturnStatement",
-                        "return_value": {
-                            "type": "InfixExpression",
-                            "node_type": "InfixExpression",
-                            "left_node": {
-                                "type": "IdentifierLiteral",
-                                "node_type": "IdentifierLiteral",
-                                "value": "n"
-                            },
-                            "operator": "*",
-                            "right_node": {
-                                "type": "CallExpression",
-                                "node_type": "CallExpression",
-                                "function": {
-                                    "type": "IdentifierLiteral",
-                                    "node_type": "IdentifierLiteral",
-                                    "value": "factorial"
-                                },
-                                "arguments": [
-                                    {
-                                        "type": "InfixExpression",
-                                        "node_type": "InfixExpression",
-                                        "left_node": {
-                                            "type": "IdentifierLiteral",
-                                            "node_type": "IdentifierLiteral",
-                                            "value": "n"
-                                        },
-                                        "operator": "-",
-                                        "right_node": {
-                                            "type": "IntegerLiteral",
-                                            "node_type": "IntegerLiteral",
-                                            "value": 1
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                ]
-            },
-            "return_type": "int"
-        },
-        {
-            "type": "FunctionStatement",
-            "node_type": "FunctionStatement",
-            "name": {
-                "type": "IdentifierLiteral",
-                "node_type": "IdentifierLiteral",
                 "value": "main"
             },
             "parameters": [],
@@ -125,204 +21,27 @@
                         "name": {
                             "type": "IdentifierLiteral",
                             "node_type": "IdentifierLiteral",
-                            "value": "n"
-                        },
-                        "value": {
-                            "type": "IntegerLiteral",
-                            "node_type": "IntegerLiteral",
-                            "value": 2
-                        },
-                        "value_type": "int"
-                    },
-                    {
-                        "type": "AssignStatement",
-                        "node_type": "AssignStatement",
-                        "ident": {
-                            "type": "IdentifierLiteral",
-                            "node_type": "IdentifierLiteral",
-                            "value": "n"
-                        },
-                        "right_value": {
-                            "type": "InfixExpression",
-                            "node_type": "InfixExpression",
-                            "left_node": {
-                                "type": "IntegerLiteral",
-                                "node_type": "IntegerLiteral",
-                                "value": 3
-                            },
-                            "operator": "+",
-                            "right_node": {
-                                "type": "FloatLiteral",
-                                "node_type": "FloatLiteral",
-                                "value": 1.0
-                            }
-                        },
-                        "operator": "+="
-                    },
-                    {
-                        "type": "LetStatement",
-                        "node_type": "LetStatement",
-                        "name": {
-                            "type": "IdentifierLiteral",
-                            "node_type": "IdentifierLiteral",
-                            "value": "out"
-                        },
-                        "value": {
-                            "type": "CallExpression",
-                            "node_type": "CallExpression",
-                            "function": {
-                                "type": "IdentifierLiteral",
-                                "node_type": "IdentifierLiteral",
-                                "value": "factorial"
-                            },
-                            "arguments": [
-                                {
-                                    "type": "IdentifierLiteral",
-                                    "node_type": "IdentifierLiteral",
-                                    "value": "n"
-                                }
-                            ]
-                        },
-                        "value_type": "int"
-                    },
-                    {
-                        "type": "ExpressionStatement",
-                        "node_type": "ExpressionStatement",
-                        "expr": {
-                            "type": "CallExpression",
-                            "node_type": "CallExpression",
-                            "function": {
-                                "type": "IdentifierLiteral",
-                                "node_type": "IdentifierLiteral",
-                                "value": "printf"
-                            },
-                            "arguments": [
-                                {
-                                    "type": "StringLiteral",
-                                    "node_type": "StringLiteral",
-                                    "value": "Factorial de %i este %i \n"
-                                },
-                                {
-                                    "type": "IdentifierLiteral",
-                                    "node_type": "IdentifierLiteral",
-                                    "value": "n"
-                                },
-                                {
-                                    "type": "IdentifierLiteral",
-                                    "node_type": "IdentifierLiteral",
-                                    "value": "out"
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "type": "LetStatement",
-                        "node_type": "LetStatement",
-                        "name": {
-                            "type": "IdentifierLiteral",
-                            "node_type": "IdentifierLiteral",
-                            "value": "pi"
-                        },
-                        "value": {
-                            "type": "FloatLiteral",
-                            "node_type": "FloatLiteral",
-                            "value": 3.1415
-                        },
-                        "value_type": "float"
-                    },
-                    {
-                        "type": "ExpressionStatement",
-                        "node_type": "ExpressionStatement",
-                        "expr": {
-                            "type": "CallExpression",
-                            "node_type": "CallExpression",
-                            "function": {
-                                "type": "IdentifierLiteral",
-                                "node_type": "IdentifierLiteral",
-                                "value": "printf"
-                            },
-                            "arguments": [
-                                {
-                                    "type": "StringLiteral",
-                                    "node_type": "StringLiteral",
-                                    "value": "Numarul %f este mai mic decat 4.0? %b \n"
-                                },
-                                {
-                                    "type": "IdentifierLiteral",
-                                    "node_type": "IdentifierLiteral",
-                                    "value": "pi"
-                                },
-                                {
-                                    "type": "InfixExpression",
-                                    "node_type": "InfixExpression",
-                                    "left_node": {
-                                        "type": "IdentifierLiteral",
-                                        "node_type": "IdentifierLiteral",
-                                        "value": "pi"
-                                    },
-                                    "operator": "<",
-                                    "right_node": {
-                                        "type": "FloatLiteral",
-                                        "node_type": "FloatLiteral",
-                                        "value": 4.0
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "type": "LetStatement",
-                        "node_type": "LetStatement",
-                        "name": {
-                            "type": "IdentifierLiteral",
-                            "node_type": "IdentifierLiteral",
-                            "value": "lmao"
+                            "value": "output"
                         },
                         "value": {
                             "type": "BooleanLiteral",
                             "node_type": "BooleanLiteral",
-                            "value": false
+                            "value": "true"
                         },
                         "value_type": "bool"
                     },
                     {
-                        "type": "ExpressionStatement",
-                        "node_type": "ExpressionStatement",
-                        "expr": {
-                            "type": "CallExpression",
-                            "node_type": "CallExpression",
-                            "function": {
-                                "type": "IdentifierLiteral",
-                                "node_type": "IdentifierLiteral",
-                                "value": "printf"
-                            },
-                            "arguments": [
-                                {
-                                    "type": "StringLiteral",
-                                    "node_type": "StringLiteral",
-                                    "value": "Lmao este true? %b"
-                                },
-                                {
-                                    "type": "InfixExpression",
-                                    "node_type": "InfixExpression",
-                                    "left_node": {
-                                        "type": "BooleanLiteral",
-                                        "node_type": "BooleanLiteral",
-                                        "value": false
-                                    },
-                                    "operator": "==",
-                                    "right_node": {
-                                        "type": "IdentifierLiteral",
-                                        "node_type": "IdentifierLiteral",
-                                        "value": "lmao"
-                                    }
-                                }
-                            ]
+                        "type": "ReturnStatement",
+                        "node_type": "ReturnStatement",
+                        "return_value": {
+                            "type": "IdentifierLiteral",
+                            "node_type": "IdentifierLiteral",
+                            "value": "output"
                         }
                     }
                 ]
             },
-            "return_type": "void"
+            "return_type": "int"
         }
     ]
 }

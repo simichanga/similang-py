@@ -36,7 +36,7 @@ class TestAssignments(unittest.TestCase):
 
     def test_boolean_assignment(self):
         code = """
-        fn main() -> bool {
+        fn main() -> int {
             let cond: bool = 22 == 22;
             return cond;
         }
@@ -52,17 +52,18 @@ class TestAssignments(unittest.TestCase):
         }
         """
         result = self.compile_and_execute(code)
-        self.assertEqual(result, 10)
+        self.assertEqual(result, (10, ''))
 
     def test_float_assignment(self):
         code = """
-        fn main() -> float {
+        fn main() -> int {
             let num: float = 3.5;
-            return num;
+            let output: bool = num == 3.5;
+            return output;
         }
         """
         result = self.compile_and_execute(code)
-        self.assertAlmostEqual(result, 3.5)
+        self.assertEqual(result, (1, ''))
 
     def test_composite_assignment_add(self):
         code = """
