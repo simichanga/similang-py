@@ -15,7 +15,8 @@ class Compiler:
     def __init__(self) -> None:
         self.type_map = None
         self.type_system = TypeSystem()
-        
+
+        # CHAT WHAT DID I DO HERE
         # 替换所有对self.type_map的直接访问
         self.module: ir.Module = ir.Module('main')
         self.builder: ir.IRBuilder = ir.IRBuilder()
@@ -454,7 +455,7 @@ class Compiler:
                 return self.builder.load(ptr), Type
             case NodeType.BooleanLiteral:
                 node: BooleanLiteral = node
-                return ir.Constant(self.type_system.get_type('bool'), 1 if node.value else 0), self.type_system.get_type('bool')
+                return ir.Constant(self.type_system.get_type('bool'), 1 if node.value == 'true' else 0), self.type_system.get_type('bool')
             case NodeType.StringLiteral:
                 node: StringLiteral = node
                 string, Type = self.__convert_string(node.value)
