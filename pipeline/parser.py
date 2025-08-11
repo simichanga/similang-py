@@ -587,8 +587,11 @@ class Parser:
     def __parse_float_literal(self) -> Optional[FloatLiteral]:
         return self.__parse_literal(FloatLiteral, float)
 
-    def __parse_boolean(self) -> BooleanLiteral:
-        return BooleanLiteral(value=self.__current_token_is(bool))
+    def __parse_boolean(self) -> Optional[BooleanLiteral]:
+        # BUG: is not correctly evaluated during AST construction, resulting in all around false
+        # return BooleanLiteral(value=self.__current_token_is(bool))
+        # return self.__parse_literal(BooleanLiteral, bool)
+        return BooleanLiteral(value=self.current_token.type.value.lower())
 
     def __parse_identifier(self) -> IdentifierLiteral:
         return self.__parse_string_or_identifier(IdentifierLiteral)
