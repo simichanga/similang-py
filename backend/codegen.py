@@ -136,8 +136,14 @@ class Codegen:
 
     def visit_expressionstatement(self, node: A.ExpressionStatement) -> None:
         if node.expr is not None:
-            self._lower_expression(node.expr)
-
+            # Check if the expression is actually a statement (e.g., IfStatement)
+            # and handle it appropriately
+            if isinstance(node.expr, A.Statement):
+                # If it's a statement type, visit it as a statement instead of lowering as expression
+                self.visit(node.expr)
+            else:
+                # Otherwise, handle as normal expression
+                self._lower_expression(node.expr)
     def visit_blockstatement(self, node: A.BlockStatement) -> None:
         # new lexical scope: we rely on Environment to manage nested scopes (util/env.py)
         # simply visit all statements
