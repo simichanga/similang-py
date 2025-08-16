@@ -1,0 +1,355 @@
+\ProvidesFile{romanian.lbx}
+
+\DeclareBibliographyExtras{%
+  \protected\def\mkbibdatelong#1#2#3{%
+    \iffieldundef{#3}
+      {}
+      {\stripzeros{\thefield{#3}}%
+       \ifnumequal{\thefield{#3}}{1}
+         {\textsuperscript{er}}
+         {}%
+       \iffieldundef{#2}{}{\nobreakspace}}%
+    \iffieldundef{#2}
+      {}
+      {\mkbibmonth{\thefield{#2}}%
+       \iffieldundef{#1}{}{\space}}%
+    \iffieldbibstring{#1}
+      {\bibstring{\thefield{#1}}}
+      {\dateeraprintpre{#1}\stripzeros{\thefield{#1}}}}%
+  \protected\def\mkbibdateshort#1#2#3{%
+    \iffieldundef{#3}
+      {}
+      {\mkdayzeros{\thefield{#3}}%
+       \iffieldundef{#2}{}{/}}%
+    \iffieldundef{#2}
+      {}
+      {\mkmonthzeros{\thefield{#2}}%
+       \iffieldundef{#1}{}{/}}%
+    \iffieldbibstring{#1}
+      {\bibstring{\thefield{#1}}}
+      {\dateeraprintpre{#1}\mkyearzeros{\thefield{#1}}}}%
+}
+
+
+\DeclareBibliographyStrings{%
+  bibliography     = {{Bibliografie}{Bibliografie}},
+  references       = {{Referințe}{Referințe}},
+  shorthands       = {{Listă de abrevieri}{Listă de abrevieri}},
+  editor           = {{editor}{ed\adddot}},
+  editors          = {{editori}{ed\adddot}},
+% compiler         = {{}{}}, % FIXME: missing
+% compilers        = {{}{}}, % FIXME: missing
+  redactor         = {{redactor}{red\adddot}},
+  redactors        = {{revisores}{red\adddot}},
+  reviser          = {{recenzor}{rec\adddot}},
+  revisers         = {{recenzori}{rec\adddot}},
+% founder          = {{}{}}, % FIXME: missing
+% founders         = {{}{}}, % FIXME: missing
+% continuator      = {{}{}}, % FIXME: missing
+% continuators     = {{}{}}, % FIXME: missing
+% collaborator     = {{}{}}, % FIXME: missing
+% collaborators    = {{}{}}, % FIXME: missing
+  translator       = {{traducător}{trad\adddot}},
+  translators      = {{traducători}{trad\adddot}},
+% commentator      = {{}{}}, % FIXME: missing
+% commentators     = {{}{}}, % FIXME: missing
+% annotator        = {{}{}}, % FIXME: missing
+% annotators       = {{}{}}, % FIXME: missing
+  commentary       = {{comentariu}{com\adddot}},
+  annotations      = {{note}{note}},
+  introduction     = {{introducere}{introd\adddot}},
+  foreword         = {{prefață}{prefață}},
+  afterword        = {{postfață}{postfață}},
+% editortr         = {{}{}}, % FIXME: missing
+% editorstr        = {{}{}}, % FIXME: missing
+% editorco         = {{}{}}, % FIXME: missing
+% editorsco        = {{}{}}, % FIXME: missing
+% editoran         = {{}{}}, % FIXME: missing
+% editorsan        = {{}{}}, % FIXME: missing
+% editorin         = {{}{}}, % FIXME: missing
+% editorsin        = {{}{}}, % FIXME: missing
+% editorfo         = {{}{}}, % FIXME: missing
+% editorsfo        = {{}{}}, % FIXME: missing
+% editoraf         = {{}{}}, % FIXME: missing
+% editorsaf        = {{}{}}, % FIXME: missing
+% editortrco       = {{}{}}, % FIXME: missing
+% editorstrco      = {{}{}}, % FIXME: missing
+% editortran       = {{}{}}, % FIXME: missing
+% editorstran      = {{}{}}, % FIXME: missing
+% editortrin       = {{}{}}, % FIXME: missing
+% editorstrin      = {{}{}}, % FIXME: missing
+% editortrfo       = {{}{}}, % FIXME: missing
+% editorstrfo      = {{}{}}, % FIXME: missing
+% editortraf       = {{}{}}, % FIXME: missing
+% editorstraf      = {{}{}}, % FIXME: missing
+% editorcoin       = {{}{}}, % FIXME: missing
+% editorscoin      = {{}{}}, % FIXME: missing
+% editorcofo       = {{}{}}, % FIXME: missing
+% editorscofo      = {{}{}}, % FIXME: missing
+% editorcoaf       = {{}{}}, % FIXME: missing
+% editorscoaf      = {{}{}}, % FIXME: missing
+% editoranin       = {{}{}}, % FIXME: missing
+% editorsanin      = {{}{}}, % FIXME: missing
+% editoranfo       = {{}{}}, % FIXME: missing
+% editorsanfo      = {{}{}}, % FIXME: missing
+% editoranaf       = {{}{}}, % FIXME: missing
+% editorsanaf      = {{}{}}, % FIXME: missing
+% editortrcoin     = {{}{}}, % FIXME: missing
+% editorstrcoin    = {{}{}}, % FIXME: missing
+% editortrcofo     = {{}{}}, % FIXME: missing
+% editorstrcofo    = {{}{}}, % FIXME: missing
+% editortrcoaf     = {{}{}}, % FIXME: missing
+% editorstrcoaf    = {{}{}}, % FIXME: missing
+% editortranin     = {{}{}}, % FIXME: missing
+% editorstranin    = {{}{}}, % FIXME: missing
+% editortranfo     = {{}{}}, % FIXME: missing
+% editorstranfo    = {{}{}}, % FIXME: missing
+% editortranaf     = {{}{}}, % FIXME: missing
+% editorstranaf    = {{}{}}, % FIXME: missing
+% translatorco     = {{}{}}, % FIXME: missing
+% translatorsco    = {{}{}}, % FIXME: missing
+% translatoran     = {{}{}}, % FIXME: missing
+% translatorsan    = {{}{}}, % FIXME: missing
+% translatorin     = {{}{}}, % FIXME: missing
+% translatorsin    = {{}{}}, % FIXME: missing
+% translatorfo     = {{}{}}, % FIXME: missing
+% translatorsfo    = {{}{}}, % FIXME: missing
+% translatoraf     = {{}{}}, % FIXME: missing
+% translatorsaf    = {{}{}}, % FIXME: missing
+% translatorcoin   = {{}{}}, % FIXME: missing
+% translatorscoin  = {{}{}}, % FIXME: missing
+% translatorcofo   = {{}{}}, % FIXME: missing
+% translatorscofo  = {{}{}}, % FIXME: missing
+% translatorcoaf   = {{}{}}, % FIXME: missing
+% translatorscoaf  = {{}{}}, % FIXME: missing
+% translatoranin   = {{}{}}, % FIXME: missing
+% translatorsanin  = {{}{}}, % FIXME: missing
+% translatoranfo   = {{}{}}, % FIXME: missing
+% translatorsanfo  = {{}{}}, % FIXME: missing
+% translatoranaf   = {{}{}}, % FIXME: missing
+% translatorsanaf  = {{}{}}, % FIXME: missing
+  byauthor         = {{de}{de}},
+  byeditor         = {{editat de}{ed\adddotspace de}},
+% bycompiler       = {{}{}}, % FIXME: missing
+  byredactor       = {{redactat de}{red\adddotspace de}},
+  byreviser        = {{recenzat de}{rec\adddotspace de}},
+% byfounder        = {{}{}}, % FIXME: missing
+% bycontinuator    = {{}{}}, % FIXME: missing
+% bycollaborator   = {{}{}}, % FIXME: missing
+  bytranslator     = {{tradus \lbx@lfromlang\ de}{trad\adddot\ \lbx@sfromlang\ de}},
+  bycommentator    = {{comentat de}{com\adddot\ de}},
+  byannotator      = {{adnotat de}{adn\adddot\ de}},
+  withcommentator  = {{cu comentariu de la}{cu com\adddot\ de la}},
+  withannotator    = {{cu note de la}{cu note de la}},
+  withintroduction = {{cu introducere de la}{cu introd\adddot\ de la}},
+  withforeword     = {{cu prefața de la}{cu prefața de la}},
+% withafterword    = {{con ep\'{\i}logo de}{con ep\'{\i}l\adddot\ de}},
+% byeditortr       = {{editado y traducido \lbx@lfromlang\ por}%
+    %                  {ed\adddotspace y trad\adddot\ \lbx@sfromlang\ por}},
+% byeditorco       = {{editado y comentado por}%
+   %                   {ed\adddotspace y com\adddot\ por}},
+% byeditoran       = {{editado y anotado por}%
+ %                     {ed\adddotspace y anot\adddot\ por}},
+% byeditorin       = {{editado e introducido por}%
+  %                    {ed\adddotspace e introd\adddot\ por}},
+% byeditorfo       = {{editado y prologado por}%
+ %                     {ed\adddotspace y pr\'ol\adddot\ por}},
+% byeditoraf       = {{editado y epilogado por}%
+%                      {ed\adddotspace y epil\adddot\ por}},
+% byeditortrco     = {{editado, traducido \lbx@lfromlang\ y comentado por}%
+%                      {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang\ y com\adddot\ por}},
+% byeditortran     = {{editado, traducido \lbx@lfromlang\ y anotado por}%
+%                      {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang\ y anot\adddot\ por}},
+% byeditortrin     = {{editado, traducido \lbx@lfromlang\ e introducido por}%
+     %                 {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang\ e introd\adddot\ por}},
+  %byeditortrfo     = {{editado, traducido \lbx@lfromlang\ y prologado por}
+   %                   {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang\ y pr\'ol\adddot\ por}},
+  %byeditortraf     = {{editado, traducido \lbx@lfromlang\ y epilogado por}%
+   %                   {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang\ y epil\adddot\ por}},
+%  byeditorcoin     = {{editado, comentado e introducido por}%
+%                      {ed.,\addabbrvspace com\adddot\ e introd\adddot\ por}},
+%  byeditorcofo     = {{editado, comentado y prologado por}%
+%                      {ed.,\addabbrvspace com\adddot\ y pr\'ol\adddot\ por}},
+%  byeditorcoaf     = {{editado, comentado y epilogado por}%
+%                      {ed.,\addabbrvspace com\adddot\ y epil\adddot\ por}},
+%  byeditoranin     = {{editado, anotado e introducido por}%
+%                      {ed.,\addabbrvspace anot\adddot\ e introd\adddot\ por}},
+%  byeditoranfo     = {{editado, anotado y prologado por}%
+%                      {ed.,\addabbrvspace anot\adddot\ y pr\'ol\adddot\ por}},
+%  byeditoranaf     = {{editado, anotado y epilogado por}%
+%                      {ed.,\addabbrvspace anot\adddot\ y epil\adddot\ por}},
+%  byeditortrcoin   = {{editado, traducido \lbx@lfromlang, comentado e introducido por}%
+%                      {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang, com\adddot\ e introd\adddot\ por}},
+%  byeditortrcofo   = {{editado, traducido \lbx@lfromlang, comentado y prologado por}%
+ %                     {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang, com\adddot\ y pr\'ol\adddot\ por}},
+ % byeditortrcoaf   = {{editado, traducido \lbx@lfromlang, comentado y epilogado por}%
+ %                     {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang, com\adddot\ y epil\adddot\ por}},
+ % byeditortranin   = {{editado, traducido \lbx@lfromlang, anotado e introducido por}%
+ %                     {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang, anot\adddot\ e introd\adddot\ por}},
+ % byeditortranfo   = {{editado, traducido \lbx@lfromlang, anotado y prologado por}%
+ %                     {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang, anot\adddot\ y pr\'ol\adddot\ por}},
+ % byeditortranaf   = {{editado, traducido \lbx@lfromlang, anotado y epilogado por}%
+ %                     {ed.,\addabbrvspace trad\adddot\ \lbx@sfromlang, anot\adddot\ y epil\adddot\ por}},
+%  bytranslatorco   = {{traducido \lbx@lfromlang\ y comentado por}%
+ %                     {trad\adddot\ \lbx@sfromlang\ y com\adddot\ por}},
+%  bytranslatoran   = {{traducido \lbx@lfromlang\ y anotado por}%
+ %                     {trad\adddot\ \lbx@sfromlang\ y anot\adddot\ por}},
+ % bytranslatorin   = {{traducido \lbx@lfromlang\ e introducido por}%
+%                      {trad\adddot\ \lbx@sfromlang\ e introd\adddot\ por}},
+%  bytranslatorfo   = {{traducido \lbx@lfromlang\ y prologado por}%
+ %                     {trad\adddot\ \lbx@sfromlang\ y pr\'ol\adddot\ por}},
+  %bytranslatoraf   = {{traducido \lbx@lfromlang\ y epilogado por}%
+   %                   {trad\adddot\ \lbx@sfromlang\ y epil\adddot\ por}},
+%  bytranslatorcoin = {{traducido \lbx@lfromlang, comentado e introducido por}%
+ %                     {trad\adddot\ \lbx@sfromlang, com\adddot\ e introd\adddot\ por}},
+%  bytranslatorcofo = {{traducido \lbx@lfromlang, comentado y prologado por}%
+ %                     {trad\adddot\ \lbx@sfromlang, com\adddot\ y pr\'ol\adddot\ por}},
+%  bytranslatorcoaf = {{traducido \lbx@lfromlang, comentado y epilogado por}%
+ %                     {trad\adddot\ \lbx@sfromlang, com\adddot\ y epil\adddot\ por}},
+%  bytranslatoranin = {{traducido \lbx@lfromlang, anotado e introducido por}%
+ %                     {trad\adddot\ \lbx@sfromlang, anot\adddot\ e introd\adddot\ por}},
+%  bytranslatoranfo = {{traducido \lbx@lfromlang, anotado y prologado por}%
+ %                     {trad\adddot\ \lbx@sfromlang, anot\adddot\ y pr\'ol\adddot\ por}},
+%  bytranslatoranaf = {{traducido \lbx@lfromlang, anotado y epilogado por}%
+ %                     {trad\adddot\ \lbx@sfromlang, anot\adddot\ y epil\adddot\ por}},
+  and              = {{și}{și}},
+  andothers        = {{și alții}{și alții}},
+% andmore          = {{}{}}, % FIXME: missing
+  volume           = {{volum}{vol\adddot}},
+  volumes          = {{volume}{vol\adddot}},
+  jourvol          = {{volum}{vol\adddot}},
+  jourser          = {{serie}{ser\adddot}},
+  book             = {{carte}{car\adddot}},
+  part             = {{parte}{par\addot}},
+% issue            = {{număr}{n\adddot}}, % FIXME: missing
+  newseries        = {{serie nouă}{serie nouă}},
+  oldseries        = {{serie veche}{serie veche}},
+  edition          = {{ediție}{ed\adddot}},
+% reprint          = {{}{}}, % FIXME: missing
+% reprintof        = {{}{}}, % FIXME: missing
+% reprintas        = {{}{}}, % FIXME: missing
+  page             = {{pagina}{pag\adddot}},
+  pages            = {{paginile}{pag\adddot}},
+  column           = {{coloana}{col\adddot}},
+  columns          = {{coloanele}{cols\adddot}},
+  line             = {{linia}{lin\adddot}},
+  lines            = {{liniile}{lins\adddot}},
+  verse            = {{verso}{ver\adddot}},
+  verses           = {{versos}{vers\adddot}},
+  section          = {{secțiunea}{sec\adddot}},
+  sections         = {{secțiunile}{sec\adddot}},
+  paragraph        = {{paragraf}{par\adddot}},
+  paragraphs       = {{paragrafele}{par\adddot}},
+  in               = {{în}{în}},
+  inseries         = {{în}{în}},
+  ofseries         = {{de}{de}},
+  number           = {{numarul}{nr\addot}},
+  chapter          = {{capitolul}{cap\adddot}},
+  mathesis         = {{Teză de master}{Teză de mas\adddot}},
+  phdthesis        = {{Teză de doctorat}{Teză de doct\adddot}},
+% resreport        = {{}{}}, % FIXME: missing
+  techreport       = {{raport technic}{rap\adddotspace tech\adddot}},
+  software         = {{software}{soft\addot}},
+  datacd           = {{CD}{CD}},
+  audiocd          = {{CD audio}{CD audio}},
+  version          = {{versiunea}{versiunea}},
+  url              = {{adresa}{adresa}},
+  urlseen          = {{vizitat}{vizitat}},
+% inpreparation    = {{}{}}, % FIXME: missing
+% submitted        = {{}{}}, % FIXME: missing
+% forthcoming      = {{}{}}, % FIXME: missing
+% inpress          = {{}{}}, % FIXME: missing
+%  citedas          = {{citado en adelante como}{cit\adddotspace en adelante como}},
+% thiscite         = {{}{}}, % FIXME: missing
+% seenote          = {{}{}}, % FIXME: missing
+% quotedin         = {{}{}}, % FIXME: missing
+  idem             = {{\'{\i}dem}{\'{\i}d\adddot}},
+  idemsf           = {{\'{\i}dem}{\'{\i}d\adddot}},
+  idemsm           = {{\'{\i}dem}{\'{\i}d\adddot}},
+  idemsn           = {{\'{\i}dem}{\'{\i}d\adddot}},
+  idempf           = {{\'{\i}dem}{\'{\i}d\adddot}},
+  idempm           = {{\'{\i}dem}{\'{\i}d\adddot}},
+  idempn           = {{\'{\i}dem}{\'{\i}d\adddot}},
+  idempp           = {{\'{\i}dem}{\'{\i}d\adddot}},
+  ibidem           = {{ib\'{\i}dem}{ib\'{\i}d\adddot}},
+  opcit            = {{\'op\adddotspace cit\adddot}{\'op\adddotspace cit\adddot}},
+  loccit           = {{loc\adddotspace cit\adddot}{loc\adddotspace cit\adddot}},
+  confer           = {{cf\adddot}{cf\adddot}},
+  sequens          = {{s\adddot}{s\adddot}},
+  sequentes        = {{ss\adddot}{ss\adddot}},
+  passim           = {{p\'assim}{p\'assim}},
+  see              = {{observă}{obs\adddot}},
+  seealso          = {{observă de asemenea}{obs\adddotspace de asemenea}},
+%  backrefpage      = {{v\'ease p\'agina}{vid\adddotspace p\'ag\adddot}},
+%  backrefpages     = {{v\'ease p\'aginas}{vid\adddotspace p\'ags\adddot}},
+  january          = {{ianuarie}{ian\adddot}},
+  february         = {{februarie}{feb\adddot}},
+  march            = {{martie}{mar\adddot}},
+  april            = {{aprilie}{apr\adddot}},
+  may              = {{mai}{mai}},
+  june             = {{iunie}{iun\adddot}},
+  july             = {{iulie}{iul\adddot}},
+  august           = {{august}{aug\adddot}},
+  september        = {{septembrie}{sep\adddot}},
+  october          = {{octombrie}{oct\adddot}},
+  november         = {{noiembrie}{nov\adddot}},
+  december         = {{decembrie}{dec\adddot}},
+%  langamerican     = {{americano}{americano}},
+%  langbrazilian    = {{brasile\~no}{brasile\~no}},
+% langcroatian     = {{}{}}, % FIXME: missing
+%  langdanish       = {{dan\'es}{dan\'es}},
+%  langdutch        = {{neerland\'es}{neerland\'es}},
+%  langenglish      = {{ingl\'es}{ingl\'es}},
+% langfinnish      = {{}{}}, % FIXME: missing
+%  langfrench       = {{franc\'es}{franc\'es}},
+%  langgerman       = {{alem\'an}{alem\'an}},
+%  langgreek        = {{griego}{griego}},
+%  langitalian      = {{italiano}{italiano}},
+%  langlatin        = {{lat\'{\i}n}{lat\'{\i}n}},
+%  langnorwegian    = {{noruego}{noruego}},
+%  langportuguese   = {{portugu\'es}{portugu\'es}},
+% langrussian      = {{}{}}, % FIXME: missing
+%  langspanish      = {{espa\~nol}{espa\~nol}},
+%  langswedish      = {{sueco}{sueco}},
+%  fromamerican     = {{del americano}{del americano}},
+%  frombrazilian    = {{del brasile\~no}{del brasile\~no}},
+% fromcroatian     = {{}{}}, % FIXME: missing
+%  fromdanish       = {{del dan\'es}{del dan\'es}},
+%  fromdutch        = {{del neerland\'es}{del neerland\'es}},
+%  fromenglish      = {{del ingl\'es}{del ingl\'es}},
+% fromfinnish      = {{}{}}, % FIXME: missing
+%  fromfrench       = {{del franc\'es}{del franc\'es}},
+%  fromgerman       = {{del alem\'an}{del alem\'an}},
+%  fromgreek        = {{del griego}{del griego}},
+%  fromitalian      = {{del italiano}{del italiano}},
+%  fromlatin        = {{del lat\'{\i}n}{del lat\'{\i}n}},
+%  fromnorwegian    = {{del noruego}{del noruego}},
+%  fromportuguese   = {{del portugu\'es}{del portugu\'es}},
+% fromrussian      = {{}{}}, % FIXME: missing
+%  fromspanish      = {{del espa\~nol}{del espa\~nol}},
+%  fromswedish      = {{del sueco}{del sueco}},
+%  countryde        = {{Alemania}{DE}},
+%  countryeu        = {{Uni\'on Europea}{EU}},
+%  countryep        = {{Uni\'on Europea}{EP}},
+%  countryfr        = {{Francia}{FR}},
+%  countryuk        = {{Reino Unido}{GB}}, % FIXME: "Reino Unido" or "Gran Breta\~na"?
+%  countryus        = {{Estados Unidos de Am\'erica}{US}}, % FIXME: "Estados Unidos" only?
+  patent           = {{patent}{pat\adddot}},
+%  patentde         = {{patente alemana}{pat\adddot\ alemana}},
+%  patenteu         = {{patente europea}{pat\adddot\ europea}},
+%  patentfr         = {{patente francesa}{pat\adddot\ francesa}},
+%  patentuk         = {{patente brit\'anica}{pat\adddot\ brit\'anica}},
+%  patentus         = {{patente americana}{pat\adddot\ americana}},
+%  patreq           = {{solicitud de patente}{solicitud de pat\adddot}},
+%  patreqde         = {{solicitud de patente alemana}{solicitud de pat\adddot\ alemana}},
+%  patreqeu         = {{solicitud de patente europea}{solicitud de pat\adddot\ europea}},
+%  patreqfr         = {{solicitud de patente francesa}{solicitud de pat\adddot\ francesa}},
+%  patrequk         = {{solicitud de patente brit\'anica}{solicitud de pat\adddot\ brit\'anica}},
+%  patrequs         = {{solicitud de patente americana}{solicitud de pat\adddot\ americana}},
+% file             = {{}{}}, % FIXME: missing
+% library          = {{}{}}, % FIXME: missing
+% abstract         = {{}{}}, % FIXME: missing
+% annotation       = {{}{}}, % FIXME: missing
+}
+
+\endinput

@@ -1,0 +1,380 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{./cls/standard}[2013/06/07 Standard LaTeX utilities]
+
+
+\makeatletter
+
+\usepackage{etoolbox,ifthen} 																	% useful for ifthen type of commands
+\usepackage{kvoptions}																			  % useful for defining key/value pairs as options for packages and classes
+
+% define the boolean variables in which we store the options chosen for the pacckage (language and type of document)
+\newbool{@eng}\setbool{@eng}{true}
+
+\newbool{@dis}\setbool{@dis}{true}
+\newbool{@lic}\setbool{@lic}{false}
+\newbool{@phd}\setbool{@phd}{false}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% define and setup the key/value pairs for the package options
+\SetupKeyvalOptions{
+family=std,
+prefix=std@
+}
+\DeclareStringOption[english]{language}
+\DeclareStringOption[phd]{type}
+
+\DeclareDefaultOption{%
+\PackageWarning{\@currname}{Unknown option `\CurrentOption'}}
+
+\ProcessKeyvalOptions*
+
+
+\ifthenelse{\equal{\std@language}{romanian}}{\setbool{@eng}{false}}{\setbool{@eng}{true}}
+
+\ifthenelse{\equal{\std@type}{phd}}{\setbool{@phd}{true}\setbool{@lic}{false}\setbool{@dis}{false}}{}
+\ifthenelse{\equal{\std@type}{bachelor}}{\setbool{@lic}{true}\setbool{@phd}{false}\setbool{@dis}{false}}{}
+\ifthenelse{\equal{\std@type}{master}}{\setbool{@dis}{true}\setbool{@lic}{false}\setbool{@phd}{false}}{}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%define size for figures (as percentage of the page width)
+\def \singlefigure {.75\textwidth}
+\def \singlelongfigure {.95\textwidth}
+\def \doublefigure {.475\textwidth}
+\def \triplefigure {.33\textwidth}
+\def \quadfigure {.225\textwidth}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% various useful packages %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[top=2cm,bottom=2cm,right=2cm,left=3cm]{geometry} % default margins: top=2cm,bottom=2cm,right=2cm,left=3cm
+\geometry{a4paper}                                           % Set the page size to be A4 as opposed to the default US Letter
+\usepackage{setspace}																				 % necessary for setting line interdistance
+\usepackage{fancyhdr}																				 % useful for writting fancy headers/footers
+
+\usepackage{appendix}																				 % used for definition of appendices
+\usepackage{lettrine}																				 % commands for making the first letter of a chapter have a special form (larger than the rest, italic, etc)
+\usepackage{xspace}                                          % \xspace should be used at the end of a macro designed to be used mainly in text. It adds a space unless the macro 
+																														 % is followed by certain punctuation characters.
+\usepackage{enumitem}                                        % for more options regarding the itemize/enumerate and description environments in latex
+
+\usepackage{fancyvrb}																				 % for verbatim environments which don't break the page
+
+
+% \usepackage{indentfirst}																		 % indents the first paragraph of each chapter ??
+%\usepackage{parskip} 
+%\usepackage{iftex}
+%\ifXeTeX
+\usepackage{fontspec}
+%\fi
+
+\usepackage{color}	
+\usepackage{xcolor}
+% for defining colors
+\usepackage{fancybox}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\usepackage{listings}
+
+% \lstdefinestyle{mystyle}{ backgroundcolor=\color{backcolour}, commentstyle=\color{codegreen}, keywordstyle=\color{magenta}, numberstyle=\tiny\color{codegray}, stringstyle=\color{codepurple}, basicstyle=\ttfamily\footnotesize, breakatwhitespace=false, breaklines=true, captionpos=b, keepspaces=true, numbers=left, numbersep=5pt, showspaces=false, showstringspaces=false, showtabs=false, tabsize=2 }
+
+\definecolor{codegreen}{rgb}{0,0.6,0} 
+\definecolor{codegray}{rgb}{0.5,0.5,0.5} 
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+% \lstset{ %
+%   backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
+%   basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+%   breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+%   breaklines=true,                 % sets automatic line breaking
+%   captionpos=b,                    % sets the caption-position to bottom
+%   commentstyle=\color{mygreen},    % comment style
+%   deletekeywords={...},            % if you want to delete keywords from the given language
+%   escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+%   extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+%   frame=single,                    % adds a frame around the code
+%   keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+%   keywordstyle=\color{blue},       % keyword style
+%   language=Octave,                 % the language of the code
+%   morekeywords={*,...},            % if you want to add more keywords to the set
+%   numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+%   numbersep=5pt,                   % how far the line-numbers are from the code
+%   numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+%   rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+%   showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+%   showstringspaces=false,          % underline spaces within strings only
+%   showtabs=false,                  % show tabs within strings adding particular underscores
+%   stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+%   stringstyle=\color{mymauve},     % string literal style
+%   tabsize=2,                       % sets default tabsize to 2 spaces
+%   %title=\lstname,                  % show the filename of files included with \lstinputlisting; also try caption instead of title
+% 	float=h,
+% }
+\lstdefinestyle{mystyle}{
+ backgroundcolor=\color{backcolour},%
+ commentstyle=\color{codegreen},%
+ keywordstyle=\color{magenta},%
+ numberstyle=\tiny\color{codegray},%
+ stringstyle=\color{codepurple},%
+ basicstyle=\ttfamily\footnotesize,%
+ breakatwhitespace=false,%
+ breaklines=true,%
+ captionpos=b,%
+ keepspaces=true,%
+ numbers=left,%
+ numbersep=5pt,%
+ showspaces=false,%
+ showstringspaces=false,%
+ showtabs=false,%
+ tabsize=2 
+}
+
+\lstset{style=mystyle}
+
+
+
+
+\usepackage[algo2e, linesnumbered, algoruled, algochapter]{algorithm2e} % used for algorithm environments
+
+\usepackage{graphicx}																				 % used for including figures
+\usepackage[lofdepth,lotdepth]{subfig}											 % used for complex figures/subfigures 
+\usepackage{array,multirow,longtable}												 % for tables and various options
+\usepackage{amsfonts,amsmath,amssymb,amsthm,mathtools}			 % all that is needed for math environments/fonts and symbols
+
+% \usepackage[citestyle=\cls/upb-authoryear,bibstyle=\cls/upb-authoryear, backend=bibtex]{biblatex} % for reference citation (uses bibtex as a backend) 
+
+\usepackage[citestyle=numeric,bibstyle=numeric, backend=biber]{biblatex} % for reference citation (uses bibtex as a backend) 
+
+%% for accepting special characters both for input (tex source) and output (pdf output)
+%\usepackage{lmodern}
+%\usepackage[T1,LY1]{fontenc}
+%\usepackage[utf8]{inputenc}																	 
+\usepackage{fontspec}
+
+\usepackage{csquotes}																				 % for defining quotes (styles for different languages can be defined/changed
+\DeclareQuoteStyle{romanian}{\quotedblbase}{‌​\textquotedblleft}{\guillemotleft}{\guillemotright}
+
+
+%%%%%%%%%%%%%%%%%%%%%%% hyperref package %%%%%%%%%%%%%%%%%%%%%%
+% package that makes all the citations into hyperlinks and can set various properties for the pdf document; a lot of options; it is best to add it last, for compatibility reasons
+
+% also, define some colours to be used
+\definecolor{webgreen}{rgb}{0, 0.5, 0}                       % less intense green
+\definecolor{webblue}{rgb}{0, 0, 0.5}                        % less intense blue
+\definecolor{webred}{rgb}{0.5, 0, 0}                         % less intense red
+
+\usepackage[unicode,pdfpagemode={UseNone}, pdfpagelayout={SinglePage}, bookmarks=true,bookmarksnumbered=true, bookmarksopen=true, bookmarksopenlevel=0,colorlinks=true,linkcolor=webblue, citecolor=webred,urlcolor=webblue, pdfstartview={FitV},breaklinks=true]{hyperref} 
+
+\usepackage[toc]{glossaries}                                 % for making glossaries, has to be after hyperref for clickable links
+%\makeglossaries
+\makenoidxglossaries 																				 % using this avoids the entire discussion with makeindex and xindy (http://ctan.math.utah.edu/tex-archive/macros/latex/contrib/glossaries/glossariesbegin.pdf at page 9/21)
+
+% deal with the language characteristic differences
+\ifbool{@eng}{
+\usepackage[english]{babel}																	 % set english language for formatting (default is english) 
+}
+{
+\usepackage[romanian]{babel}																 % set romanian language for formatting (default is english) 
+
+\DeclareLanguageMapping{romanian}{./cls/romanian}
+
+\renewcommand{\listalgorithmcfname}{List\u a de algoritmi}   % the name has to be written manually for romanian
+\renewcommand*{\algorithmcfname}{Algoritm}
+\renewcommand*{\algorithmautorefname}{Algoritm}
+
+\renewcommand{\appendixname}{Anexe}
+\renewcommand{\appendixpagename}{Anexe}
+\renewcommand{\appendixtocname}{Anexe}
+
+\providecommand*{\lstlistingautorefname}{Listarea}
+\renewcommand*{\lstlistingname}{Listarea}
+\renewcommand*{\tableautorefname}{Tabelul}
+\renewcommand*{\equationautorefname}{Ecuația}
+\newcommand*{\margintableautorefname}{Tabelul}
+\newcommand*{\margintablename}{Tabelul}
+\renewcommand*{\figureautorefname}{Figura}
+\renewcommand*{\chapterautorefname}{Capitolul}
+\renewcommand*{\sectionautorefname}{Secțiunea}
+\renewcommand*{\subsectionautorefname}{Subsecțiunea}
+\renewcommand*{\subsubsectionautorefname}{Subsubsecțiunea}
+
+\renewcaptionname{romanian}{\tablename}{Tabelul}
+%\renewcommand*{\glossaryname}{Glosar}
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% layout settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setstretch{1} 																							 % default line interdistance: 1
+\setlength{\parindent}{1cm}																	 % default paragraph indent 1cm
+\setlength{\parskip}{1em plus.4em minus.3em}								 % default paragraph interdistance (1em)
+
+% settings for header and footer
+\pagestyle{fancy}																						 % select page header/footer style (default is fancy)
+\fancyhead{}																								 % clear previous header settings
+\fancyfoot{}																								 % clear previous footer settings
+\fancyhead[L]{\leftmark}															    	 % show in the left pages the chapter title
+\fancyfoot[C]{\thepage}																	     % show in the center pages the page number
+\setlength{\headheight}{14pt}																 % change the head height for the header (default is 14pt)
+\renewcommand{\headrulewidth}{1pt}													 % width of the line under the header (default is 1pt, modify to 0pt if you want to erase it)
+
+\renewcommand{\chaptermark}[1]{\markboth{\chaptername\ \thechapter.\ #1}{}} % modify how the chapter name is used in the header
+\newcommand{\myLettrine}[2]{\lettrine[lines=2, lraise=0.15]{#1}{#2}}        % define how the first letter of the chapter looks
+
+%decide until what depth are the table of contents/figures and tables shown
+\setcounter{tocdepth}{3}
+\setcounter{lofdepth}{2}
+\setcounter{lotdepth}{2}
+
+% defines adviser command (needed in the titlepage)
+\newcommand\advisor[1]{\renewcommand\@advisor{Prof. dr. ing. #1}}
+\newcommand\@advisor{}
+
+% titlepage; change only if you have to
+\renewcommand{\maketitle}{
+\begin{titlepage}																					  
+%include logos
+\begin{tabular}{p{.3\textwidth}p{.4\textwidth}p{.3\textwidth}}
+\includegraphics[height=4em]{\pics/logo/upb}&\includegraphics[height=4em]{\pics/logo/acse}&\includegraphics[height=4em]{\pics/logo/acs}
+\end{tabular}
+\vspace{1em}
+\begin{center}
+\ifbool{@eng}
+{
+Politehnica University of Bucharest\\
+Faculty of Automatic Control and Computers\\
+Department of Automatic Control and Systems Engineering\\
+}
+{
+Universitatea Politehnica Bucure\c sti\\
+Facultatea de Automatic\u a si Calculatoare\\
+Departamentul de Automatic\u a \c si Ingineria Sistemelor\\
+}
+\vspace{10em}
+{\Huge\textbf{
+\ifbool{@dis}{\ifbool{@eng}{MASTER THESIS}{LUCRARE DE DIZERTA\c TIE}}{}
+\ifbool{@lic}{\ifbool{@eng}{BACHELOR THESIS}{LUCRARE DE DIPLOM\u A}}{}
+\ifbool{@phd}{\ifbool{@eng}{PHD THESIS}{LUCRARE DE DOCTORAT}}{}
+}}
+\vspace{3em}
+
+{\huge\textbf{\@title}}
+\end{center}
+\vspace{7em}
+\begin{flushright}
+\Large{
+\ifbool{@eng}{Absolvent}{Absolvent}\\
+\@author}
+\end{flushright}
+
+\vspace{3em}
+\Large{
+\begin{flushleft}
+\ifbool{@eng}{Advisor}{Coordonator}\\\@advisor
+\end{flushleft}
+\vfill
+\begin{center}
+\Large{ \ifbool{@eng}{Bucharest}{Bucure\c sti}, \the\year}
+\end{center}
+}
+\end{titlepage}
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% theorem styles and referencing %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% by adding [chapter] we impose that they are numbered in the c.n format (chapter index.index inside chapter)
+\theoremstyle{plain}
+\newtheorem{thm}{\ifbool{@eng}{Theorem}{Teorema}}[chapter]
+\newtheorem{prop}{\ifbool{@eng}{Proposition}{Propozitia}}[chapter]
+\newtheorem{cor}{\ifbool{@eng}{Corollary}{Corolar}}[chapter]
+\newtheorem{lem}{\ifbool{@eng}{Lemma}{Lema}}[chapter]
+
+\newtheorem{df}{\ifbool{@eng}{Definition}{Defini\c tia}}[chapter]
+
+\theoremstyle{definition}
+\theoremstyle{remark}
+\newtheorem{rem}{\ifbool{@eng}{Remark}{Remarca}}[chapter]
+\newtheorem{assum}{\ifbool{@eng}{Assumption}{Asump\c tia}}[chapter]
+\newtheorem{hyp}{\ifbool{@eng}{Hypothesis}{Ipoteza}}[chapter]
+
+% define end of theorem and end of remark symbols
+\newcommand{\eot}{\ensuremath{\hfill\square}}
+\newcommand{\eor}{\ensuremath{\hfill\blacklozenge}}
+\def\qed{\ensuremath{\hfill\blacksquare}}
+
+% use these macros when referring to another element from text
+\newcommand{\figref}[1]{\ifbool{@eng}{Figure}{Figura}~\ref{#1}\xspace}
+\newcommand{\chapref}[1]{\ifbool{@eng}{Chapter}{Capitolul}~\ref{#1}\xspace}
+\newcommand{\subsecref}[1]{\ifbool{@eng}{Subsection}{Subsec\c tiunea}~\ref{#1}\xspace}
+\newcommand{\subsubsecref}[1]{\ifbool{@eng}{Subsubsection}{Subsubsec\c tiunea}~\ref{#1}\xspace}
+\newcommand{\secref}[1]{\ifbool{@eng}{Section}{Sec\c tiunea}~\ref{#1}\xspace}
+\newcommand{\appref}[1]{Appendix~\ref{#1}\xspace}
+\newcommand{\remref}[1]{\ifbool{@eng}{Remark}{Remarca}~\ref{#1}\xspace}
+\newcommand{\propref}[1]{\ifbool{@eng}{Proposition}{Propozi\c tia}~\ref{#1}\xspace}
+\newcommand{\cororef}[1]{\ifbool{@eng}{Corollary}{Corolarul}~\ref{#1}\xspace}
+\newcommand{\algref}[1]{\ifbool{@eng}{Algorithm}{Algoritmul}~\ref{#1}\xspace}
+\newcommand{\lstref}[1]{\ifbool{@eng}{Source}{Sursa}~\ref{#1}\xspace}
+\newcommand{\thmref}[1]{\ifbool{@eng}{Theorem}{Teorema}~\ref{#1}\xspace}
+\newcommand{\assumref}[1]{\ifbool{@eng}{Assumption}{Asump\c tia}~\ref{#1}\xspace}
+\newcommand{\genref}[2]{#1~\ref{#2}\xspace}
+\newcommand{\lemref}[1]{\ifbool{@eng}{Lemma}{Lema}~\ref{#1}\xspace}%
+\newcommand{\defref}[1]{\ifbool{@eng}{Definition}{Defini\c tia}~\ref{#1}\xspace}%
+\newcommand{\tabref}[1]{\ifbool{@eng}{Table}{Tabelul}~\ref{#1}\xspace}%
+\newcommand{\hypref}[1]{\ifbool{@eng}{Hypothesis}{Hipoteza}~\ref{#1}\xspace}%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% some command shortcuts %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+
+\newcommand{\bse}{\begin{subequations}}
+\newcommand{\ese}{\end{subequations}}
+
+
+\def\bal#1\eal{\begin{align}#1\end{align}}
+\def\baln#1\ealn{\begin{align*}#1\end{align*}}
+
+\newcommand{\ben}{\begin{equation*}}
+\newcommand{\een}{\end{equation*}}
+
+\newcommand{\bea}{\begin{eqnarray}}
+\newcommand{\eea}{\end{eqnarray}}
+
+\newcommand{\bean}{\begin{eqnarray*}}
+\newcommand{\eean}{\end{eqnarray*}}
+
+\newcommand{\bbm}{\begin{bmatrix}}
+\newcommand{\ebm}{\end{bmatrix}}
+
+\newcommand{\bBm}{\begin{Bmatrix}}
+\newcommand{\eBm}{\end{Bmatrix}}
+
+\newcommand{\bvm}{\begin{vmatrix}}
+\newcommand{\evm}{\end{vmatrix}}
+
+\newcommand{\bVm}{\begin{Vmatrix}}
+\newcommand{\eVm}{\end{Vmatrix}}
+
+\newcommand{\bpm}{\begin{pmatrix}}
+\newcommand{\epm}{\end{pmatrix}}
+
+\newcommand{\bnm}{\begin{matrix}}
+\newcommand{\enm}{\end{matrix}}
+
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+
+\newcommand{\ba}{\begin{array}}
+\newcommand{\ea}{\end{array}}
+
+
+
+
+
+\makeatother
+\endinput
