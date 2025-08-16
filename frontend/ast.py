@@ -25,6 +25,7 @@ class NodeType(Enum):
     CallExpression = 'CallExpression'
     PrefixExpression = 'PrefixExpression'
     PostfixExpression = 'PostfixExpression'
+    IndexExpression = 'IndexExpression'
 
     # Literals
     IntegerLiteral = 'IntegerLiteral'
@@ -32,10 +33,13 @@ class NodeType(Enum):
     IdentifierLiteral = 'IdentifierLiteral'
     BooleanLiteral = 'BooleanLiteral'
     StringLiteral = 'StringLiteral'
+    ArrayLiteral = 'ArrayLiteral'
 
     # Helper
     FunctionParameter = 'FunctionParameter'
 
+    # Types
+    ArrayType = 'ArrayType'
 
 # --- Node base ---
 @dataclass
@@ -263,3 +267,29 @@ class StringLiteral(Expression):
 
     def type(self) -> NodeType:
         return NodeType.StringLiteral
+
+@dataclass
+class ArrayType(Node):
+    """Represents array types like int[10] or float[]"""
+    element_type: str
+    size: Optional[Expression] = None # None for dynamic arrays
+
+    def type(self) -> NodeType:
+        return NodeType.ArrayType
+
+@dataclass
+class ArrayLiteral(Expression):
+    """Represents array literals like [1, 2, 3]"""
+    elements: List[Expression]
+
+    def type(self) -> NodeType:
+        return NodeType.ArrayLiteral
+
+@dataclass
+class IndexExpression(Expression):
+    """Represents array indexing like arr[i]"""
+    left: Expression # the array
+    index: Expression
+
+    def type(self) -> NodeType:
+        return NodeType.IndexExpression

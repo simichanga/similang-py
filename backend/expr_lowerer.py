@@ -59,11 +59,13 @@ class ExpressionLowerer:
         return ir.Constant(irt, v), 'bool'
 
     def _lower_identifierliteral(self, node: A.IdentifierLiteral) -> Tuple[ir.Value, str]:
-        sym = self.env.lookup(node.value)  # expected to raise if not found
-        ptr, type_name = sym
-        # ptr is expected to be an addressable pointer (alloca or global)
-        val = self.builder.load(ptr)
-        return val, type_name
+        ptr, type_name = self.env.lookup(node.value)
+        if '[' in type_name:
+            # Arrays: return pointer directly, do not load
+            return ptr, type_name
+        else:
+            val = self.builder.load(ptr)
+            return val, type_name
 
     # ---- calls ----
     def _lower_callexpression(self, node: A.CallExpression) -> Tuple[ir.Value, str]:
@@ -121,6 +123,36 @@ class ExpressionLowerer:
                     call_args.append(v)
         result = self.builder.call(func_ptr, call_args)
         return result, ret_type_name or 'int'
+
+    def _as_i32(self, v: ir.Value, tname: str) -> ir.Value:
+        """Coerce an index value to i32 for GEP."""
+        i32 = ir.IntType(32)
+        if tname == 'int':
+            return v if isinstance(v.type, ir.IntType) and v.type.width == 32 else self.builder.sext(v, i32)
+        if tname == 'bool':
+            return self.builder.zext(v, i32)
+        if tname == 'float':
+            return self.builder.fptosi(v, i32)
+        # default: try bitcast/extend if it's already an int of another width
+        if isinstance(v.type, ir.IntType):
+            return v if v.type.width == 32 else self.builder.sext(v, i32)
+        raise RuntimeError("Array index must be int/bool/float (coercible to i32)")
+
+    def _lower_indexexpression(self, node: A.IndexExpression) -> Tuple[ir.Value, str]:
+        array_val, array_type_name = self.lower(node.left)
+        elem_ir_type = self.types.get_element_type(array_type_name.split('[')[0])
+        index_val, _ = self.lower(node.index)
+
+        if not isinstance(array_val.type, ir.PointerType):
+            raise RuntimeError("Indexing requires a pointer to an array, got value instead.")
+
+        elem_ptr = self.builder.gep(array_val, [
+            ir.Constant(self.types.get_ir_type('int'), 0),
+            index_val
+        ])
+
+        elem_val = self.builder.load(elem_ptr)
+        return elem_val, array_type_name.split('[')[0]
 
     # ---- postfix (++, --) ----
     def _lower_postfixexpression(self, node: A.PostfixExpression) -> Tuple[ir.Value, str]:

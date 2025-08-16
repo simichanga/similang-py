@@ -93,7 +93,7 @@ class SemanticAnalyzer:
         if node.value_type is None:
             self.errors.append(f"Let {node.name.value!r}: missing type annotation")
             return
-        if not self.types.exists(node.value_type):
+        if not self.types.exists(node.value_type.split('[')[0]): # TODO: fix this weird hack for arrays
             self.errors.append(f"Unknown type '{node.value_type}' for variable '{node.name.value}'")
             return
 
@@ -257,6 +257,32 @@ class SemanticAnalyzer:
     def _visit_booleanliteral(self, node: A.BooleanLiteral) -> Optional[str]:
         return 'bool'
 
+    def _visit_arrayliteral(self, node: A.ArrayLiteral) -> Optional[str]:
+        """Analyze literal [1, 2, 3]"""
+        if not node.elements:
+            # Empty array - need type context
+            # TODO - implement resizable arrays
+            self.errors.append("Cannot infer type of empty array literal")
+            return None
+
+        # Check if all elements have compatible types
+        element_types = []
+        for elem in node.elements:
+            elem_type = self._visit_expression(elem)
+            if elem_type is None:
+                return None
+            element_types.append(elem_type)
+
+        # Find common type (for now, require all same type)
+        first_type = element_types[0]
+        if not all(t == first_type for t in element_types):
+            self.errors.append(f"Array elements must have same type, got: {element_types}")
+            return None
+
+        array_type = f"{first_type}[{len(node.elements)}]"
+        setattr(node, "inferred_type", array_type)
+        return array_type
+
     def _visit_identifierliteral(self, node: A.IdentifierLiteral) -> Optional[str]:
         sym = self._lookup(node.value)
         if sym is None:
@@ -343,3 +369,23 @@ class SemanticAnalyzer:
             return 'bool'
         self.errors.append(f"Unknown prefix operator {node.operator}")
         return None
+
+    def _visit_indexexpression(self, node: A.IndexExpression) -> Optional[str]:
+        """Analyze array[index]"""
+        array_type = self._visit_expression(node.left)
+        index_type = self._visit_expression(node.index)
+
+        if array_type is None or index_type is None:
+            return None
+
+        if not self.types.is_array_type(array_type):
+            self.errors.append(f"Cannot index non-array type {array_type}")
+            return None
+
+        if index_type != 'int':
+            self.errors.append(f"Array index must be int, got {index_type}")
+            return None
+
+        element_type = self.types.get_element_type(array_type)
+        setattr(node, "inferred_type", element_type)
+        return element_type

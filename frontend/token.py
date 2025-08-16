@@ -68,6 +68,10 @@ class TokenType(Enum):
     # Types
     TYPE = 'TYPE'
 
+    # Index
+    LBRACKET = '['
+    RBRACKET = ']'
+
 
 @dataclass
 class Token:

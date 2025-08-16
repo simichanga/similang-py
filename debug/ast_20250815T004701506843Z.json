@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "timestamp_utc": "2025-08-15T00:47:01.506889Z",
+    "python_version": "3.13.5 (main, Jun 21 2025, 09:35:00) [GCC 15.1.1 20250425]",
+    "llvmlite_version": null,
+    "git_commit": "5af9c32",
+    "config": {
+      "DEBUG": true,
+      "LEXER_DEBUG": true,
+      "PARSER_DEBUG": true,
+      "SEMANTIC_DEBUG": true,
+      "CODEGEN_DEBUG": true
+    }
+  },
+  "ast": {
+    "type": "Program",
+    "statements": [
+      {
+        "name": {
+          "value": "main"
+        },
+        "parameters": [],
+        "body": {
+          "statements": [
+            {
+              "name": {
+                "value": "arr"
+              },
+              "value": {
+                "elements": [
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  },
+                  {
+                    "value": 5
+                  }
+                ]
+              },
+              "value_type": "int[5]"
+            },
+            {
+              "name": {
+                "value": "sum"
+              },
+              "value": {
+                "value": 0
+              },
+              "value_type": "int"
+            },
+            {
+              "var_declaration": {
+                "name": {
+                  "value": "i"
+                },
+                "value": {
+                  "value": 0
+                },
+                "value_type": "int"
+              },
+              "condition": {
+                "left_node": {
+                  "value": "i"
+                },
+                "operator": "<",
+                "right_node": {
+                  "value": 5
+                }
+              },
+              "action": {
+                "left_node": {
+                  "value": "i"
+                },
+                "operator": "++"
+              },
+              "body": {
+                "statements": [
+                  {
+                    "expr": {
+                      "function": {
+                        "value": "printf"
+                      },
+                      "arguments": [
+                        {
+                          "value": "arr[%d]: %d\n"
+                        },
+                        {
+                          "value": "i"
+                        },
+                        {
+                          "left": {
+                            "value": "arr"
+                          },
+                          "index": {
+                            "value": "i"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "return_value": {
+                "value": "sum"
+              }
+            }
+          ]
+        },
+        "return_type": "int"
+      }
+    ]
+  }
+}

@@ -224,6 +224,10 @@ class Lexer:
             tok = self._new_token(TokenType.LBRACE, '{')
         elif ch == '}':
             tok = self._new_token(TokenType.RBRACE, '}')
+        elif ch == '[':
+            tok = self._new_token(TokenType.LBRACKET, '[')
+        elif ch == ']':
+            tok = self._new_token(TokenType.RBRACKET, ']')
         elif ch == ';':
             tok = self._new_token(TokenType.SEMICOLON, ';')
         elif ch.isalpha() or ch == '_':

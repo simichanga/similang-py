@@ -106,33 +106,49 @@ class Codegen:
         self.builder = prev_builder
 
     def visit_letstatement(self, node: A.LetStatement) -> None:
-        # name type and initial value are required (sema should have enforced)
+        """Enhanced to handle array types"""
+
         name = node.name.value
         type_name = node.value_type
-        irt = self.types.get_ir_type(type_name)
+
+        if self.types.is_array_type(type_name):
+            element_type, size = self.types.parse_array_type(type_name)
+            if size is not None:
+                array_ir_type = self.types.get_array_ir_type(element_type, size)
+            else:
+                # Dynamic array
+                array_ir_type = self.types.get_array_ir_type(element_type, None)
+        else:
+            array_ir_type = self.types.get_ir_type(type_name)
+
         # create alloca in current function scope (must have builder)
         if self.builder is None:
-            # global variable (top-level let) — emit global init
-            # create global variable
-            init_val, _ = self._lower_expression(node.value)
-            gv_type = irt
-            # if string -> gv_type is pointer already
-            gvar = ir.GlobalVariable(self.module, gv_type, name=name)
+            # Global array
+            if isinstance(node.value, A.ArrayLiteral):
+                init_val = self._lower_array_literal(node.value, type)
+            else:
+                init_val = ir.Constant(array_ir_type, None)
+
+            gvar = ir.GlobalVariable(self.module, array_ir_type, name)
             gvar.global_constant = False
-            try:
-                gvar.initializer = init_val
-            except Exception:
-                # initializer mismatch (e.g. pointer vs array) -> skip initializer
-                gvar.initializer = ir.Constant(gv_type, None)
+            gvar.initializer = init_val
             self.env.define(name, gvar, type_name)
         else:
-            # local variable
-            ptr = self.builder.alloca(irt)
-            val, val_t = self._lower_expression(node.value)
-            # convert val to expected ir type if needed
-            store_val = self._coerce_value_to_type(val, val_t, type_name)
-            self.builder.store(store_val, ptr)
+            # Local array
+            ptr = self.builder.alloca(array_ir_type)
+            if isinstance(node.value, A.ArrayLiteral):
+                self._store_array_literal(node.value, ptr, type_name)
             self.env.define(name, ptr, type_name)
+
+    def _store_array_literal(self, node: A.ArrayLiteral, array_ptr: ir.Value, expected_type: str):
+        """Store array literal elements into allocated array"""
+        element_type, _ = self.types.parse_array_type(expected_type)
+        for i, elem in enumerate(node.elements):
+            val, _ = self._lower_expression(elem)
+            # Get pointer to array element
+            indices = [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), i)]
+            elem_ptr = self.builder.gep(array_ptr, indices)
+            self.builder.store(val, elem_ptr)
 
     def visit_expressionstatement(self, node: A.ExpressionStatement) -> None:
         if node.expr is not None:
@@ -327,6 +343,31 @@ class Codegen:
         lowerer = ExpressionLowerer(self.builder, self.module, self.types, self.env)
         v, t = lowerer.lower(node)
         return v, t
+
+    def _lower_array_literal(self, node: A.ArrayLiteral, expected_type: str) -> ir.Constant:
+        """Lower array literal to LLVM constant"""
+        element_type, size = self.types.parse_array_type(expected_type)
+        elem_ir_type = self.types.get_ir_type(element_type)
+
+        # Convert elements to IR constants
+        ir_elements = []
+        for elem in node.elements:
+            val, _ = self._lower_expression(elem)
+            if isinstance(val, ir.Constant):
+                ir_elements.append(val)
+            else:
+                # For non-constant expressions, use default value
+                ir_elements.append(ir.Constant(elem_ir_type, 0))
+
+        if size and len(ir_elements) != size:
+            if len(ir_elements) < size:
+                zero = ir.Constant(elem_ir_type, 0)
+                ir_elements.extend([zero] * (size - len(ir_elements)))
+            else:
+                ir_elements = ir_elements[:size]
+
+        array_type = ir.ArrayType(elem_ir_type, len(ir_elements))
+        return ir.Constant(array_type, ir_elements)
 
     def _coerce_value_to_type(self, val: ir.Value, from_type: str, to_type: str) -> ir.Value:
         """

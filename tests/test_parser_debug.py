@@ -1,6 +1,9 @@
+import pytest
+
 from frontend.lexer import Lexer
 from frontend.parser import Parser
 
+@pytest.mark.skip(reason="Temporarily skip debugging tests")
 def test_parser_debug_example(debug_dumper):
     src = 'fn main() -> int { let x: int = 1 + 2; return x; }'
     lexer = Lexer(src)

@@ -91,3 +91,34 @@ class TypeSystem:
 
         # boolean NOT / unary are handled elsewhere
         return None
+
+    def parse_array_type(self, type_str: str) -> Tuple[str, Optional[int]] | None:
+        """Parse 'int[10]' -> ('int', 10) or 'int[]' -> ('int', None)"""
+        if '[' not in type_str:
+            return type_str, None
+
+        base_type, bracket_part = type_str.split('[', 1)
+        size_str = bracket_part.rstrip(']')
+
+        if size_str == '':
+            return base_type, None
+        return base_type, int(size_str)
+
+    def get_array_ir_type(self, element_type: str, size: Optional[int]) -> ir.Type:
+        """Get LLVM IR type for arrays"""
+        elem_ir = self.get_ir_type(element_type)
+        if size is None:
+            # Dynamic array - use pointer to element type
+            return ir.PointerType(elem_ir)
+        else:
+            return ir.ArrayType(elem_ir, size)
+
+    def is_array_type(self, type_str: str) -> bool:
+        """Returns True if type_str is an array type"""
+        return '[' in type_str and ']' in type_str
+
+    def get_element_type(self, array_type: str) -> str:
+        """Extract element type from array type string"""
+        if not self.is_array_type(array_type):
+            return array_type
+        return array_type.split('[')[0]
