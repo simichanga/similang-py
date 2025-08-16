@@ -39,6 +39,8 @@ PRECEDENCES: Dict[TokenType, Precedence] = {
 
     TokenType.PLUS_PLUS: Precedence.INDEX,
     TokenType.MINUS_MINUS: Precedence.INDEX,
+
+    TokenType.LBRACKET: Precedence.INDEX
 }
 
 
@@ -66,6 +68,7 @@ class Parser:
             TokenType.STRING: self._parse_string_literal,
             TokenType.MINUS: self._parse_prefix_expression,
             TokenType.BANG: self._parse_prefix_expression,
+            TokenType.LBRACKET: self._parse_array_literal,
         }
 
         # infix defaults to generic infix parser
@@ -80,6 +83,7 @@ class Parser:
         self.infix_parse_fns[TokenType.MINUS_EQ] = self._parse_assignment_expression
         self.infix_parse_fns[TokenType.MUL_EQ] = self._parse_assignment_expression
         self.infix_parse_fns[TokenType.DIV_EQ] = self._parse_assignment_expression
+        self.infix_parse_fns[TokenType.LBRACKET] = self._parse_index_expression
 
         # prime tokens
         self._next_token()
@@ -175,23 +179,49 @@ class Parser:
 
     def _parse_let_statement(self) -> Optional[A.LetStatement]:
         stmt = A.LetStatement()
+
+        # Variable name
         if not self._expect_peek(TokenType.IDENT):
             self._peek_error(TokenType.IDENT)
             return None
         stmt.name = A.IdentifierLiteral(value=self.current_token.literal)
 
+        # Colon
         if not self._expect_peek(TokenType.COLON):
             self._peek_error(TokenType.COLON)
             return None
+
+        # Type
         if not self._expect_peek(TokenType.TYPE):
             self._peek_error(TokenType.TYPE)
             return None
-        stmt.value_type = self.current_token.literal
+        type_name = self.current_token.literal
+        array_size = None
 
+        # optional array size: TYPE [ int_literal ]
+        if self._peek_is(TokenType.LBRACKET):
+            self._next_token() # move to '['
+            if not self._expect_peek(TokenType.INT):
+                self._peek_error(TokenType.INT)
+                return None
+            array_size = int(self.current_token.literal)
+            if not self._expect_peek(TokenType.RBRACKET):
+                self._peek_error(TokenType.RBRACKET)
+                return None
+
+        # store type info
+        if array_size is not None:
+            stmt.value_type = f"{type_name}[{array_size}]"
+            stmt.array_size = array_size # Optional: store separately from semantic checks
+        else:
+            stmt.value_type = type_name
+
+        # Equals sign
         if not self._expect_peek(TokenType.EQ):
             self._peek_error(TokenType.EQ)
             return None
-        # read expression
+
+        # Read expression (value or array literal)
         self._next_token()
         stmt.value = self._parse_expression(Precedence.LOWEST)
 
@@ -421,10 +451,43 @@ class Parser:
     def _parse_string_literal(self) -> Optional[A.StringLiteral]:
         return self._parse_literal(A.StringLiteral, lambda x: str(x))
 
+    def _parse_array_literal(self) -> Optional[A.ArrayLiteral]:
+        """Parse [elem1, elem2, ...]"""
+        elements = []
+        if self._peek_is(TokenType.RBRACKET):
+            self._next_token() # consume ]
+            return A.ArrayLiteral(elements=[])
+
+        self._next_token()
+        first = self._parse_expression(Precedence.LOWEST)
+        if first:
+            elements.append(first)
+
+        while self._peek_is(TokenType.COMMA):
+            self._next_token()
+            self._next_token()
+            element = self._parse_expression(Precedence.LOWEST)
+            if element:
+                elements.append(element)
+
+        if not self._expect_peek(TokenType.RBRACKET):
+            return None
+
+        return A.ArrayLiteral(elements=elements)
+
     def _parse_identifier(self) -> A.IdentifierLiteral:
         return A.IdentifierLiteral(value=self.current_token.literal)
+
+    def _parse_index_expression(self, left: A.Expression) -> Optional[A.IndexExpression]:
+        """Parse arr[index]"""
+        self._next_token()
+        index = self._parse_expression(Precedence.LOWEST)
+        if not self._expect_peek(TokenType.RBRACKET):
+            return None
+        return A.IndexExpression(left=left, index=index)
 
     def _parse_boolean(self) -> A.BooleanLiteral:
         # FIXED: produce real Python bool values
         val = self.current_token.type == TokenType.TRUE
         return A.BooleanLiteral(value=val)
+
