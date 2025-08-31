@@ -60,7 +60,6 @@ class Parser:
             TokenType.INT: self._parse_int_literal,
             TokenType.FLOAT: self._parse_float_literal,
             TokenType.LPAREN: self._parse_grouped_expression,
-            TokenType.IF: self._parse_if_statement,
             TokenType.TRUE: self._parse_boolean,
             TokenType.FALSE: self._parse_boolean,
             TokenType.STRING: self._parse_string_literal,
@@ -142,6 +141,8 @@ class Parser:
                 return self._parse_function_statement()
             case TokenType.RETURN:
                 return self._parse_return_statement()
+            case TokenType.IF:
+                return self._parse_if_statement()
             case TokenType.WHILE:
                 return self._parse_while_statement()
             case TokenType.FOR:
@@ -269,18 +270,38 @@ class Parser:
         return block
 
     def _parse_if_statement(self) -> Optional[A.IfStatement]:
-        self._next_token()
-        cond = self._parse_expression(Precedence.LOWEST)
-        if not self._expect_peek(TokenType.LBRACE):
+        # We're already on the IF token, parse the condition
+        # Expect: if (condition) { consequence } [else { alternative }]
+        if not self._expect_peek(TokenType.LPAREN):
+            self._peek_error(TokenType.LPAREN)
             return None
-        cons = self._parse_block_statement()
-        alt = None
+
+        self._next_token()  # Move to first token of condition
+        condition = self._parse_expression(Precedence.LOWEST)
+
+        if not self._expect_peek(TokenType.RPAREN):
+            self._peek_error(TokenType.RPAREN)
+            return None
+
+        if not self._expect_peek(TokenType.LBRACE):
+            self._peek_error(TokenType.LBRACE)
+            return None
+
+        consequence = self._parse_block_statement()
+
+        alternative = None
         if self._peek_is(TokenType.ELSE):
-            self._next_token()
+            self._next_token()  # consume ELSE
             if not self._expect_peek(TokenType.LBRACE):
+                self._peek_error(TokenType.LBRACE)
                 return None
-            alt = self._parse_block_statement()
-        return A.IfStatement(condition=cond, consequence=cons, alternative=alt)
+            alternative = self._parse_block_statement()
+
+        return A.IfStatement(
+            condition=condition,
+            consequence=consequence,
+            alternative=alternative
+        )
 
     def _parse_while_statement(self) -> Optional[A.WhileStatement]:
         self._next_token()

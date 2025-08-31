@@ -81,11 +81,6 @@ def main():
     module = codegen.compile(program)
     if Config.CODEGEN_DEBUG or Config.DEBUG:
         dump_ir(module)
-    # optionally dump IR
-    Path("debug").mkdir(parents=True, exist_ok=True)
-    with open("debug/ir.ll", "w", encoding="utf8") as f:
-        f.write(str(module))
-    logger.info("Wrote IR to debug/ir.ll")
 
     if Config.RUN_CODE and not args.no_run:
         try:
