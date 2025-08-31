@@ -61,10 +61,13 @@ def main():
     program = parser.parse_program()
     if Config.PARSER_DEBUG or Config.DEBUG:
         dump_ast(program)  # auto filename
-    if parser.errors:
-        logger.error("Parser errors (%d):", len(parser.errors))
-        for e in parser.errors:
-            logger.error("  %s", e)
+    if parser.error_collector.has_errors():
+        logger.error("Parser warnings (%d):", len(parser.error_collector.warnings))
+        for warn in parser.error_collector.errors:
+            print(warn.format())
+        logger.error("Parser errors (%d):", len(parser.error_collector.errors))
+        for err in parser.error_collector.errors:
+            print(err.format())
         sys.exit(1)
 
     # Semantic analysis
@@ -81,11 +84,6 @@ def main():
     module = codegen.compile(program)
     if Config.CODEGEN_DEBUG or Config.DEBUG:
         dump_ir(module)
-    # optionally dump IR
-    Path("debug").mkdir(parents=True, exist_ok=True)
-    with open("debug/ir.ll", "w", encoding="utf8") as f:
-        f.write(str(module))
-    logger.info("Wrote IR to debug/ir.ll")
 
     if Config.RUN_CODE and not args.no_run:
         try:
