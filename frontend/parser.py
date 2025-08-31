@@ -5,6 +5,7 @@ from enum import IntEnum, auto
 from frontend.lexer import Lexer
 from frontend.token import TokenType, Token
 from frontend import ast as A
+from util.errors import ErrorCollector
 
 
 class Precedence(IntEnum):
@@ -50,7 +51,7 @@ class Parser:
 
     def __init__(self, lexer: Lexer) -> None:
         self.lexer = lexer
-        self.errors: List[str] = []
+        self.error_collector = ErrorCollector()
         self.current_token: Optional[Token] = None
         self.peek_token: Optional[Token] = None
 
@@ -104,7 +105,10 @@ class Parser:
 
     def _peek_error(self, tt: TokenType) -> None:
         got = self.peek_token.type if self.peek_token else None
-        self.errors.append(f"Expected next token to be {tt}, got {got}.")
+        self.error_collector.add_error(
+            f"Expected next token to be {tt}, got {got}",
+            line=self.peek_token.line_no if self.peek_token else None
+        )
 
     def _current_precedence(self) -> Precedence:
         return PRECEDENCES.get(self.current_token.type, Precedence.LOWEST)

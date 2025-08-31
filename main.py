@@ -61,10 +61,13 @@ def main():
     program = parser.parse_program()
     if Config.PARSER_DEBUG or Config.DEBUG:
         dump_ast(program)  # auto filename
-    if parser.errors:
-        logger.error("Parser errors (%d):", len(parser.errors))
-        for e in parser.errors:
-            logger.error("  %s", e)
+    if parser.error_collector.has_errors():
+        logger.error("Parser warnings (%d):", len(parser.error_collector.warnings))
+        for warn in parser.error_collector.errors:
+            print(warn.format())
+        logger.error("Parser errors (%d):", len(parser.error_collector.errors))
+        for err in parser.error_collector.errors:
+            print(err.format())
         sys.exit(1)
 
     # Semantic analysis
