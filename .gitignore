@@ -31,6 +31,15 @@ debug/*.gz
 debug/*.txt
 debug/*.meta.json
 
+# Source maps generated next to .simi files
+*.simi.map.json
+
+# VS Code extension build
+editor/vscode/out/
+editor/vscode/node_modules/
+editor/vscode/*.vsix
+.vscode-temp/
+
 # OS
 Thumbs.db
 .DS_Store

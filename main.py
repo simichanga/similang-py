@@ -50,6 +50,10 @@ def parse_args():
     p.add_argument("--source-map", action="store_true", help="Generate a source map (.simi.map.json)")
     p.add_argument("--show-source-map", action="store_true",
                    help="Print the source map table to stdout")
+    p.add_argument("--emit-ir", action="store_true",
+                   help="Print the generated LLVM IR to stdout")
+    p.add_argument("--emit-source-map", action="store_true",
+                   help="Print the source map as JSON to stdout")
     return p.parse_args()
 
 def load_source(path: str) -> str:
@@ -110,7 +114,7 @@ def main():
 
     # Source map (created before codegen so codegen can record anchors)
     smap = None
-    if args.source_map or args.show_source_map:
+    if args.source_map or args.show_source_map or args.emit_source_map:
         smap = SourceMap(filename=args.file, source_text=src)
 
     # Codegen
@@ -125,6 +129,10 @@ def main():
         diag.summary()
         sys.exit(1)
 
+    # Emit IR to stdout if requested
+    if args.emit_ir:
+        print(str(module))
+
     # Write / display source map
     if smap:
         if args.source_map:
@@ -136,6 +144,9 @@ def main():
             print()
             print(smap.format_table())
             print()
+        if args.emit_source_map:
+            import json as _json
+            print(_json.dumps(smap.to_json()))
 
     if Config.RUN_CODE and not args.no_run:
         try:

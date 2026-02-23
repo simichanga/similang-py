@@ -414,3 +414,37 @@ class TestFixtureIntegration:
         assert data["version"] == 1
         assert len(data["mappings"]) >= 3
         assert len(data["source_lines"]) >= 5
+
+
+# ===========================================================================
+# 8. CLI flag --emit-ir / --emit-source-map tests
+# ===========================================================================
+class TestCLIEmitFlags:
+    def test_emit_ir_flag(self):
+        """--emit-ir prints LLVM IR to stdout."""
+        import subprocess, sys, os
+        result = subprocess.run(
+            [sys.executable, "main.py", "tests/fixtures/simple.simi", "--no-run", "--emit-ir"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL,
+            text=True, timeout=30,
+        )
+        assert result.returncode == 0
+        assert "define i32 @" in result.stdout, "IR should contain function definitions"
+        assert "ModuleID" in result.stdout, "IR should contain module header"
+
+    def test_emit_source_map_flag(self):
+        """--emit-source-map prints source map JSON to stdout."""
+        import subprocess, sys
+        result = subprocess.run(
+            [sys.executable, "main.py", "tests/fixtures/simple.simi", "--no-run", "--emit-source-map"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL,
+            text=True, timeout=30,
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["version"] == 1
+        assert len(data["mappings"]) >= 3
+        assert "source_lines" in data
+        assert "stats" in data

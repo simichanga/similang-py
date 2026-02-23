@@ -54,11 +54,9 @@ class TestLetStatementSema:
         _ok('fn main() -> int { let s: str = "hi"; return 0; }')
 
     def test_unknown_type_error(self):
-        """Unknown types are rejected at the parser level (not in TYPE_KEYWORDS)."""
-        lex = Lexer("fn main() -> int { let x: footype = 5; return 0; }")
-        p = Parser(lex)
-        p.parse_program()
-        assert p.error_collector.has_errors()
+        """Unknown types are rejected at the sema level (parser allows IDENT for struct types)."""
+        _fails("fn main() -> int { let x: footype = 5; return 0; }",
+               match="Unknown type")
 
     def test_type_mismatch_bool_to_int(self):
         _fails("fn main() -> int { let x: int = true; return 0; }",
@@ -111,11 +109,9 @@ class TestFunctionSema:
         _ok("fn add(a: int, b: int) -> int { return a + b; }")
 
     def test_unknown_return_type(self):
-        """Unknown return types are rejected at the parser level."""
-        lex = Lexer("fn bad() -> mystery { return 0; }")
-        p = Parser(lex)
-        p.parse_program()
-        assert p.error_collector.has_errors()
+        """Unknown return types are rejected at the sema level (parser allows IDENT for struct types)."""
+        _fails("fn bad() -> mystery { return 0; }",
+               match="unknown return type")
 
     def test_unknown_param_type(self):
         """Unknown param types pass parsing but are rejected by sema."""

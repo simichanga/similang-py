@@ -19,12 +19,17 @@ class NodeType(Enum):
     ForStatement = 'ForStatement'
     BreakStatement = 'BreakStatement'
     ContinueStatement = 'ContinueStatement'
+    StructDefinition = 'StructDefinition'
+    IndexAssignStatement = 'IndexAssignStatement'
+    FieldAssignStatement = 'FieldAssignStatement'
 
     # Expressions
     InfixExpression = 'InfixExpression'
     CallExpression = 'CallExpression'
     PrefixExpression = 'PrefixExpression'
     PostfixExpression = 'PostfixExpression'
+    IndexExpression = 'IndexExpression'
+    FieldAccessExpression = 'FieldAccessExpression'
 
     # Literals
     IntegerLiteral = 'IntegerLiteral'
@@ -32,9 +37,12 @@ class NodeType(Enum):
     IdentifierLiteral = 'IdentifierLiteral'
     BooleanLiteral = 'BooleanLiteral'
     StringLiteral = 'StringLiteral'
+    ArrayLiteral = 'ArrayLiteral'
+    StructLiteral = 'StructLiteral'
 
     # Helper
     FunctionParameter = 'FunctionParameter'
+    StructField = 'StructField'
 
 
 # --- Source location ---
@@ -299,3 +307,86 @@ class StringLiteral(Expression):
 
     def type(self) -> NodeType:
         return NodeType.StringLiteral
+
+
+# --- Array & Struct nodes ---
+
+@dataclass
+class StructField(Node):
+    """A single field definition inside a struct definition."""
+    name: str = ''
+    value_type: Optional[str] = None
+
+    def type(self) -> NodeType:
+        return NodeType.StructField
+
+
+@dataclass
+class StructDefinition(Statement):
+    """Top-level struct type definition: struct Point { x: int, y: int }"""
+    name: Optional[IdentifierLiteral] = None
+    fields: List[StructField] = field(default_factory=list)
+
+    def type(self) -> NodeType:
+        return NodeType.StructDefinition
+
+
+@dataclass
+class ArrayLiteral(Expression):
+    """Array literal expression: [1, 2, 3]"""
+    elements: List[Expression] = field(default_factory=list)
+
+    def type(self) -> NodeType:
+        return NodeType.ArrayLiteral
+
+
+@dataclass
+class StructLiteral(Expression):
+    """Struct instantiation: Point { x: 10, y: 20 }"""
+    struct_name: str = ''
+    field_values: List[tuple] = field(default_factory=list)  # list of (field_name, Expression)
+
+    def type(self) -> NodeType:
+        return NodeType.StructLiteral
+
+
+@dataclass
+class IndexExpression(Expression):
+    """Array index expression: arr[0]"""
+    left: Optional[Expression] = None
+    index: Optional[Expression] = None
+
+    def type(self) -> NodeType:
+        return NodeType.IndexExpression
+
+
+@dataclass
+class FieldAccessExpression(Expression):
+    """Struct field access: point.x"""
+    object: Optional[Expression] = None
+    field_name: str = ''
+
+    def type(self) -> NodeType:
+        return NodeType.FieldAccessExpression
+
+
+@dataclass
+class IndexAssignStatement(Statement):
+    """Assignment to an array element: arr[0] = 42;"""
+    array: Optional[Expression] = None
+    index: Optional[Expression] = None
+    value: Optional[Expression] = None
+
+    def type(self) -> NodeType:
+        return NodeType.IndexAssignStatement
+
+
+@dataclass
+class FieldAssignStatement(Statement):
+    """Assignment to a struct field: point.x = 42;"""
+    object: Optional[Expression] = None
+    field_name: str = ''
+    value: Optional[Expression] = None
+
+    def type(self) -> NodeType:
+        return NodeType.FieldAssignStatement

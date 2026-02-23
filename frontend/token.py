@@ -46,6 +46,9 @@ class TokenType(Enum):
     RPAREN = ')'
     LBRACE = '{'
     RBRACE = '}'
+    LBRACKET = '['
+    RBRACKET = ']'
+    DOT = '.'
 
     # Prefix / Postfix
     BANG = '!'
@@ -64,6 +67,7 @@ class TokenType(Enum):
     CONTINUE = 'CONTINUE'
     BREAK = 'BREAK'
     FOR = 'FOR'
+    STRUCT = 'STRUCT'
 
     # Types
     TYPE = 'TYPE'
@@ -94,6 +98,7 @@ KEYWORDS: Dict[str, TokenType] = {
     'false': TokenType.FALSE,
     'while': TokenType.WHILE,
     'for': TokenType.FOR,
+    'struct': TokenType.STRUCT,
     'continue': TokenType.CONTINUE,
     'break': TokenType.BREAK,
 }

@@ -89,7 +89,68 @@ class TypeSystem:
         # Resolve aliases
         if name in self.aliases:
             name = self.aliases[name]
-        return self.types.get(name)
+        # Check direct type
+        if name in self.types:
+            return self.types[name]
+        # Parse array types: [size]element_type
+        if name.startswith('['):
+            arr = self.parse_array_type(name)
+            if arr:
+                return self.get_array_type(arr[0], arr[1])
+        return None
+
+    @staticmethod
+    def parse_array_type(name: str) -> Optional[tuple]:
+        """Parse '[size]element_type' into (element_type, size) or None."""
+        import re
+        m = re.match(r'^\[(\d+)\](\w+)$', name)
+        if m:
+            return (m.group(2), int(m.group(1)))
+        return None
+
+    def is_array_type(self, name: str) -> bool:
+        """Return True if name represents an array type."""
+        return name.startswith('[') and self.parse_array_type(name) is not None
+
+    def is_struct_type(self, name: str) -> bool:
+        """Return True if name represents a known struct type."""
+        info = self.types.get(name)
+        return info is not None and info.fields is not None
+
+    def array_element_type(self, name: str) -> Optional[str]:
+        """Return the element type name of an array type, or None."""
+        parsed = self.parse_array_type(name)
+        return parsed[0] if parsed else None
+
+    def array_size(self, name: str) -> Optional[int]:
+        """Return the size of an array type, or None."""
+        parsed = self.parse_array_type(name)
+        return parsed[1] if parsed else None
+
+    def get_struct_field_type(self, struct_type: str, field_name: str) -> Optional[str]:
+        """Return the type name of a struct field, or None."""
+        info = self.types.get(struct_type)
+        if info is None or info.fields is None:
+            return None
+        field_info = info.fields.get(field_name)
+        return field_info.name if field_info else None
+
+    def get_struct_field_index(self, struct_type: str, field_name: str) -> Optional[int]:
+        """Return the index of a field within a struct, or None."""
+        info = self.types.get(struct_type)
+        if info is None or info.fields is None:
+            return None
+        for idx, fname in enumerate(info.fields.keys()):
+            if fname == field_name:
+                return idx
+        return None
+
+    def get_struct_fields(self, struct_type: str) -> Optional[Dict[str, 'TypeInfo']]:
+        """Return the fields dict of a struct type, or None."""
+        info = self.types.get(struct_type)
+        if info is None or info.fields is None:
+            return None
+        return info.fields
 
     def resolve_alias(self, name: str) -> str:
         """Resolve a type name through the alias table to its canonical form."""
@@ -98,7 +159,13 @@ class TypeSystem:
     def exists(self, name: str) -> bool:
         """Return True if *name* (or its alias) refers to a known type."""
         canonical = self.resolve_alias(name)
-        return canonical in self.types
+        if canonical in self.types:
+            return True
+        # Check for array types: [size]element_type
+        if self.is_array_type(canonical):
+            elem = self.array_element_type(canonical)
+            return elem is not None and self.exists(elem)
+        return False
 
     # --- accessors & helper ---
     def create_struct_type(self, name: str, fields: Dict[str, str]) -> TypeInfo:
@@ -181,6 +248,12 @@ class TypeSystem:
             return True  # widen int -> float
         if self.is_int(t) and self.is_float(s):
             return True  # narrowing allowed (backend will fptosi)
+        # Array assignment: must match exactly (element type + size)
+        if self.is_array_type(t) and self.is_array_type(s):
+            return t == s
+        # Struct assignment: must match exactly
+        if self.is_struct_type(t) and self.is_struct_type(s):
+            return t == s
         # bool <-> numeric? not implicitly allowed
         return False
 

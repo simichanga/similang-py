@@ -39,6 +39,8 @@ PRECEDENCES: Dict[TokenType, Precedence] = {
     TokenType.GT_EQ: Precedence.LESSGREATER,
 
     TokenType.LPAREN: Precedence.CALL,
+    TokenType.LBRACKET: Precedence.INDEX,
+    TokenType.DOT: Precedence.INDEX,
 
     TokenType.PLUS_PLUS: Precedence.INDEX,
     TokenType.MINUS_MINUS: Precedence.INDEX,
@@ -68,6 +70,7 @@ class Parser:
             TokenType.STRING: self._parse_string_literal,
             TokenType.MINUS: self._parse_prefix_expression,
             TokenType.BANG: self._parse_prefix_expression,
+            TokenType.LBRACKET: self._parse_array_literal,
         }
 
         # infix defaults to generic infix parser
@@ -82,6 +85,8 @@ class Parser:
         self.infix_parse_fns[TokenType.MINUS_EQ] = self._parse_assignment_expression
         self.infix_parse_fns[TokenType.MUL_EQ] = self._parse_assignment_expression
         self.infix_parse_fns[TokenType.DIV_EQ] = self._parse_assignment_expression
+        self.infix_parse_fns[TokenType.LBRACKET] = self._parse_index_expression
+        self.infix_parse_fns[TokenType.DOT] = self._parse_field_access_expression
 
         # prime tokens
         self._next_token()
@@ -153,9 +158,15 @@ class Parser:
 
     # ---- statements ----
     def _parse_statement(self) -> Optional[A.Statement]:
-        # assignment: ident <op>= ...
-        if self.current_token.type == TokenType.IDENT and self._peek_assignment_op():
-            return self._parse_assignment_statement()
+        # index assignment: ident[expr] = expr;
+        # field assignment: ident.field = expr;
+        if self.current_token.type == TokenType.IDENT:
+            if self._peek_is(TokenType.LBRACKET):
+                return self._try_parse_index_assign_or_expr()
+            if self._peek_is(TokenType.DOT):
+                return self._try_parse_field_assign_or_expr()
+            if self._peek_assignment_op():
+                return self._parse_assignment_statement()
 
         ct = self.current_token.type
         match ct:
@@ -175,6 +186,8 @@ class Parser:
                 return self._parse_continue_statement()
             case TokenType.BREAK:
                 return self._parse_break_statement()
+            case TokenType.STRUCT:
+                return self._parse_struct_definition()
             case _:
                 return self._parse_expression_statement()
 
@@ -218,10 +231,11 @@ class Parser:
         if not self._expect_peek(TokenType.COLON):
             self._peek_error(TokenType.COLON)
             return None
-        if not self._expect_peek(TokenType.TYPE):
-            self._peek_error(TokenType.TYPE)
+
+        # Parse type annotation: plain TYPE, [size]TYPE for arrays, or IDENT for struct types
+        stmt.value_type = self._parse_type_annotation()
+        if stmt.value_type is None:
             return None
-        stmt.value_type = self.current_token.literal
 
         if not self._expect_peek(TokenType.EQ):
             self._peek_error(TokenType.EQ)
@@ -250,9 +264,11 @@ class Parser:
 
         if not self._expect_peek(TokenType.ARROW):
             return None
-        if not self._expect_peek(TokenType.TYPE):
+        # Parse return type (could be TYPE, IDENT for structs, or [size]TYPE for arrays)
+        ret_type = self._parse_type_annotation()
+        if ret_type is None:
             return None
-        stmt.return_type = self.current_token.literal
+        stmt.return_type = ret_type
 
         if not self._expect_peek(TokenType.LBRACE):
             return None
@@ -272,8 +288,7 @@ class Parser:
         self._tag(first)
         if not self._expect_peek(TokenType.COLON):
             return params
-        self._next_token()
-        first.value_type = self.current_token.literal
+        first.value_type = self._parse_type_annotation()
         params.append(first)
 
         while self._peek_is(TokenType.COMMA):
@@ -283,8 +298,7 @@ class Parser:
             self._tag(param)
             if not self._expect_peek(TokenType.COLON):
                 return params
-            self._next_token()
-            param.value_type = self.current_token.literal
+            param.value_type = self._parse_type_annotation()
             params.append(param)
 
         if not self._expect_peek(TokenType.RPAREN):
@@ -488,6 +502,245 @@ class Parser:
         node.right_node = self._parse_expression(Precedence.LOWEST)
         return node
 
+    # ---- type annotation parsing ----
+    def _parse_type_annotation(self) -> Optional[str]:
+        """Parse a type annotation after a colon or arrow.
+
+        Supports:
+          - Built-in types: int, float, bool, str, void, ...
+          - User-defined struct types (identifiers): Point, MyStruct
+          - Array types: [5]int, [10]Point
+        """
+        # Array type: [size]element_type
+        if self._peek_is(TokenType.LBRACKET):
+            self._next_token()  # consume [
+            if not self._expect_peek(TokenType.INT):
+                self.error_collector.add_error("Expected array size (integer) in type annotation",
+                                               line=self.current_token.line_no)
+                return None
+            size = int(self.current_token.literal)
+            if not self._expect_peek(TokenType.RBRACKET):
+                return None
+            # element type follows the bracket
+            if self._peek_is(TokenType.TYPE):
+                self._next_token()
+                elem_type = self.current_token.literal
+            elif self._peek_is(TokenType.IDENT):
+                self._next_token()
+                elem_type = self.current_token.literal
+            else:
+                self.error_collector.add_error("Expected element type after array size",
+                                               line=self.current_token.line_no)
+                return None
+            return f"[{size}]{elem_type}"
+
+        # Plain TYPE keyword
+        if self._peek_is(TokenType.TYPE):
+            self._next_token()
+            return self.current_token.literal
+
+        # User-defined type (struct name) — an IDENT
+        if self._peek_is(TokenType.IDENT):
+            self._next_token()
+            return self.current_token.literal
+
+        self._peek_error(TokenType.TYPE)
+        return None
+
+    # ---- struct definition ----
+    def _parse_struct_definition(self) -> Optional[A.StructDefinition]:
+        """Parse: struct Name { field1: type1, field2: type2 }"""
+        start = self.current_token
+        if not self._expect_peek(TokenType.IDENT):
+            return None
+        name = A.IdentifierLiteral(value=self.current_token.literal)
+        self._tag(name)
+
+        if not self._expect_peek(TokenType.LBRACE):
+            return None
+
+        fields: List[A.StructField] = []
+        # parse fields: name: type, ...
+        while not self._peek_is(TokenType.RBRACE) and not self._peek_is(TokenType.EOF):
+            self._next_token()  # move to field name
+            if self.current_token.type != TokenType.IDENT:
+                self.error_collector.add_error(
+                    f"Expected field name in struct definition, got {self.current_token.type}",
+                    line=self.current_token.line_no)
+                return None
+            field_name = self.current_token.literal
+            if not self._expect_peek(TokenType.COLON):
+                return None
+            field_type = self._parse_type_annotation()
+            if field_type is None:
+                return None
+            f = A.StructField(name=field_name, value_type=field_type)
+            self._tag(f)
+            fields.append(f)
+            # optional trailing comma
+            if self._peek_is(TokenType.COMMA):
+                self._next_token()
+
+        if not self._expect_peek(TokenType.RBRACE):
+            return None
+
+        node = A.StructDefinition(name=name, fields=fields)
+        self._tag(node, start)
+        return node
+
+    # ---- array literal ----
+    def _parse_array_literal(self) -> Optional[A.ArrayLiteral]:
+        """Parse: [expr1, expr2, ...]"""
+        start = self.current_token
+        elements = self._parse_expression_list(TokenType.RBRACKET)
+        node = A.ArrayLiteral(elements=elements)
+        self._tag(node, start)
+        return node
+
+    # ---- index expression ----
+    def _parse_index_expression(self, left: A.Expression) -> A.IndexExpression:
+        """Parse: left[index]"""
+        node = A.IndexExpression(left=left)
+        self._tag(node)
+        self._next_token()  # move past [
+        node.index = self._parse_expression(Precedence.LOWEST)
+        if not self._expect_peek(TokenType.RBRACKET):
+            pass  # error already recorded
+        return node
+
+    # ---- field access expression ----
+    def _parse_field_access_expression(self, left: A.Expression) -> A.Expression:
+        """Parse: left.field_name
+
+        If followed by '{', this is a struct literal: StructName { ... }
+        """
+        # Regular field access: left.field
+        self._next_token()  # move past .
+        if self.current_token.type != TokenType.IDENT:
+            self.error_collector.add_error(
+                f"Expected field name after '.', got {self.current_token.type}",
+                line=self.current_token.line_no)
+            return left
+        field_name = self.current_token.literal
+        node = A.FieldAccessExpression(object=left, field_name=field_name)
+        self._tag(node)
+        return node
+
+    # ---- struct literal ----
+    def _parse_struct_literal(self, struct_name: str) -> Optional[A.StructLiteral]:
+        """Parse: StructName { field1: expr1, field2: expr2 }
+        Called when we've seen IDENT followed by '{'.
+        """
+        start = self.current_token
+        # current_token is '{' — already consumed
+        field_values: List[tuple] = []
+
+        while not self._peek_is(TokenType.RBRACE) and not self._peek_is(TokenType.EOF):
+            self._next_token()  # move to field name
+            if self.current_token.type != TokenType.IDENT:
+                self.error_collector.add_error(
+                    f"Expected field name in struct literal, got {self.current_token.type}",
+                    line=self.current_token.line_no)
+                return None
+            fname = self.current_token.literal
+            if not self._expect_peek(TokenType.COLON):
+                return None
+            self._next_token()
+            val = self._parse_expression(Precedence.LOWEST)
+            if val is None:
+                return None
+            field_values.append((fname, val))
+            if self._peek_is(TokenType.COMMA):
+                self._next_token()
+
+        if not self._expect_peek(TokenType.RBRACE):
+            return None
+
+        node = A.StructLiteral(struct_name=struct_name, field_values=field_values)
+        self._tag(node, start)
+        return node
+
+    # ---- index / field assignment helpers ----
+    def _try_parse_index_assign_or_expr(self) -> Optional[A.Statement]:
+        """When we see ident[ — it could be index assignment or expression."""
+        start = self.current_token
+        ident = A.IdentifierLiteral(value=self.current_token.literal)
+        self._tag(ident)
+        self._next_token()  # move to [
+        self._next_token()  # move past [
+        index_expr = self._parse_expression(Precedence.LOWEST)
+        if not self._expect_peek(TokenType.RBRACKET):
+            pass
+
+        # Check if this is an assignment: ident[idx] = expr;
+        if self._peek_is(TokenType.EQ):
+            self._next_token()  # consume =
+            self._next_token()  # move to value
+            val = self._parse_expression(Precedence.LOWEST)
+            if self._peek_is(TokenType.SEMICOLON):
+                self._next_token()
+            node = A.IndexAssignStatement(array=ident, index=index_expr, value=val)
+            self._tag(node, start)
+            return node
+
+        # Otherwise treat as expression statement (e.g., arr[0] as part of larger expression)
+        idx_node = A.IndexExpression(left=ident, index=index_expr)
+        self._tag(idx_node, start)
+        # Continue parsing as expression (there might be more operators)
+        left = idx_node
+        while not self._peek_is(TokenType.SEMICOLON) and Precedence.LOWEST < self._peek_precedence():
+            infix = self.infix_parse_fns.get(self.peek_token.type)
+            if infix is None:
+                break
+            self._next_token()
+            left = infix(left)
+        if self._peek_is(TokenType.SEMICOLON):
+            self._next_token()
+        node = A.ExpressionStatement(expr=left)
+        self._tag(node, start)
+        return node
+
+    def _try_parse_field_assign_or_expr(self) -> Optional[A.Statement]:
+        """When we see ident. — it could be field assignment or expression."""
+        start = self.current_token
+        ident = A.IdentifierLiteral(value=self.current_token.literal)
+        self._tag(ident)
+        self._next_token()  # move to .
+        self._next_token()  # move past . to field name
+        if self.current_token.type != TokenType.IDENT:
+            self.error_collector.add_error(
+                f"Expected field name after '.', got {self.current_token.type}",
+                line=self.current_token.line_no)
+            return None
+        field_name = self.current_token.literal
+
+        # Check if this is an assignment: ident.field = expr;
+        if self._peek_is(TokenType.EQ):
+            self._next_token()  # consume =
+            self._next_token()  # move to value
+            val = self._parse_expression(Precedence.LOWEST)
+            if self._peek_is(TokenType.SEMICOLON):
+                self._next_token()
+            node = A.FieldAssignStatement(object=ident, field_name=field_name, value=val)
+            self._tag(node, start)
+            return node
+
+        # Otherwise it's a field access expression
+        field_node = A.FieldAccessExpression(object=ident, field_name=field_name)
+        self._tag(field_node, start)
+        left = field_node
+        while not self._peek_is(TokenType.SEMICOLON) and Precedence.LOWEST < self._peek_precedence():
+            infix = self.infix_parse_fns.get(self.peek_token.type)
+            if infix is None:
+                break
+            self._next_token()
+            left = infix(left)
+        if self._peek_is(TokenType.SEMICOLON):
+            self._next_token()
+        node = A.ExpressionStatement(expr=left)
+        self._tag(node, start)
+        return node
+
     # ---- prefix literal helpers ----
     def _parse_literal(self, cls, converter: Callable[[Any], Any]) -> Optional[A.Expression]:
         inst = cls()
@@ -509,9 +762,14 @@ class Parser:
     def _parse_string_literal(self) -> Optional[A.StringLiteral]:
         return self._parse_literal(A.StringLiteral, lambda x: str(x))
 
-    def _parse_identifier(self) -> A.IdentifierLiteral:
-        node = A.IdentifierLiteral(value=self.current_token.literal)
+    def _parse_identifier(self) -> Optional[A.Expression]:
+        name = self.current_token.literal
+        node = A.IdentifierLiteral(value=name)
         self._tag(node)
+        # Check for struct literal: Name { field: val, ... }
+        if self._peek_is(TokenType.LBRACE):
+            self._next_token()  # consume the {
+            return self._parse_struct_literal(name)
         return node
 
     def _parse_boolean(self) -> A.BooleanLiteral:

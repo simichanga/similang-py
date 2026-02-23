@@ -229,3 +229,111 @@ class ExpressionLowerer:
             raise RuntimeError("Boolean operator on non-comparable types or unsupported equality for strings")
         else:
             raise RuntimeError(f"Unsupported result type {res_type}")
+
+    # ---- array & struct lowering ----
+    def _lower_arrayliteral(self, node: A.ArrayLiteral) -> Tuple[ir.Value, str]:
+        """Lower [e1, e2, ...] into an alloca'd array."""
+        if not node.elements:
+            raise RuntimeError("Empty array literals are not supported")
+
+        # Lower all elements
+        elem_vals = []
+        elem_type_name = None
+        for elem in node.elements:
+            v, t = self.lower(elem)
+            elem_vals.append((v, t))
+            if elem_type_name is None:
+                elem_type_name = t
+
+        size = len(elem_vals)
+        arr_type_name = f"[{size}]{elem_type_name}"
+        type_info = self.types.get_type_info(arr_type_name)
+        if type_info is None:
+            raise RuntimeError(f"Unknown array type: {arr_type_name}")
+
+        # Allocate array on the stack
+        arr_ptr = self.builder.alloca(type_info.ir_type)
+        zero = ir.Constant(ir.IntType(32), 0)
+
+        # Store each element
+        for i, (val, vt) in enumerate(elem_vals):
+            idx = ir.Constant(ir.IntType(32), i)
+            elem_ptr = self.builder.gep(arr_ptr, [zero, idx], inbounds=True)
+            # coerce if needed
+            if vt != elem_type_name:
+                val = self._coerce(val, vt, elem_type_name)
+            self.builder.store(val, elem_ptr)
+
+        # Load the whole array value
+        arr_val = self.builder.load(arr_ptr)
+        return arr_val, arr_type_name
+
+    def _lower_structliteral(self, node: A.StructLiteral) -> Tuple[ir.Value, str]:
+        """Lower StructName { f1: v1, f2: v2 } into a struct value."""
+        struct_name = node.struct_name
+        type_info = self.types.get_type_info(struct_name)
+        if type_info is None:
+            raise RuntimeError(f"Unknown struct type: {struct_name}")
+
+        # Allocate struct on stack
+        struct_ptr = self.builder.alloca(type_info.ir_type)
+        zero = ir.Constant(ir.IntType(32), 0)
+
+        for fname, fexpr in node.field_values:
+            val, vt = self.lower(fexpr)
+            field_idx = self.types.get_struct_field_index(struct_name, fname)
+            if field_idx is None:
+                raise RuntimeError(f"Unknown field '{fname}' in struct '{struct_name}'")
+            idx = ir.Constant(ir.IntType(32), field_idx)
+            field_ptr = self.builder.gep(struct_ptr, [zero, idx], inbounds=True)
+            # coerce if needed
+            expected_type = self.types.get_struct_field_type(struct_name, fname)
+            if expected_type and vt != expected_type:
+                val = self._coerce(val, vt, expected_type)
+            self.builder.store(val, field_ptr)
+
+        struct_val = self.builder.load(struct_ptr)
+        return struct_val, struct_name
+
+    def _lower_indexexpression(self, node: A.IndexExpression) -> Tuple[ir.Value, str]:
+        """Lower arr[idx] — load the element from the array."""
+        if not isinstance(node.left, A.IdentifierLiteral):
+            raise RuntimeError("Index expression left side must be an identifier")
+
+        arr_name = node.left.value
+        arr_ptr, arr_type = self.env.lookup(arr_name)
+        idx_val, _ = self.lower(node.index)
+
+        zero = ir.Constant(ir.IntType(32), 0)
+        elem_ptr = self.builder.gep(arr_ptr, [zero, idx_val], inbounds=True)
+        elem_type = self.types.array_element_type(arr_type)
+        val = self.builder.load(elem_ptr)
+        return val, elem_type
+
+    def _lower_fieldaccessexpression(self, node: A.FieldAccessExpression) -> Tuple[ir.Value, str]:
+        """Lower obj.field — load the field from the struct."""
+        if not isinstance(node.object, A.IdentifierLiteral):
+            raise RuntimeError("Field access object must be an identifier")
+
+        obj_name = node.object.value
+        obj_ptr, obj_type = self.env.lookup(obj_name)
+        field_idx = self.types.get_struct_field_index(obj_type, node.field_name)
+        if field_idx is None:
+            raise RuntimeError(f"Struct '{obj_type}' has no field '{node.field_name}'")
+
+        zero = ir.Constant(ir.IntType(32), 0)
+        idx = ir.Constant(ir.IntType(32), field_idx)
+        field_ptr = self.builder.gep(obj_ptr, [zero, idx], inbounds=True)
+        field_type = self.types.get_struct_field_type(obj_type, node.field_name)
+        val = self.builder.load(field_ptr)
+        return val, field_type
+
+    def _coerce(self, val: ir.Value, from_type: str, to_type: str) -> ir.Value:
+        """Coerce a value between types."""
+        if from_type == to_type:
+            return val
+        if from_type == 'int' and to_type == 'float':
+            return self.builder.sitofp(val, ir.FloatType())
+        if from_type == 'float' and to_type == 'int':
+            return self.builder.fptosi(val, ir.IntType(32))
+        return val

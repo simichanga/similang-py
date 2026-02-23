@@ -93,12 +93,22 @@ class SemanticAnalyzer:
         if node.value_type is None:
             self.errors.append(f"Let {node.name.value!r}: missing type annotation")
             return
-        if not self.types.exists(node.value_type):
+
+        # Check if it's an array type
+        if self.types.is_array_type(node.value_type):
+            # Validate element type
+            elem_type = self.types.array_element_type(node.value_type)
+            if elem_type and not self.types.exists(elem_type):
+                self.errors.append(f"Unknown element type '{elem_type}' in array type for variable '{node.name.value}'")
+                return
+        elif not self.types.exists(node.value_type):
             self.errors.append(f"Unknown type '{node.value_type}' for variable '{node.name.value}'")
             return
 
-        # Resolve alias to canonical type (e.g. i32 -> int)
-        canonical_type = self.types.resolve_alias(node.value_type)
+        # Resolve alias to canonical type for primitive types
+        canonical_type = node.value_type
+        if not self.types.is_array_type(canonical_type) and not self.types.is_struct_type(canonical_type):
+            canonical_type = self.types.resolve_alias(node.value_type)
         node.value_type = canonical_type
 
         # evaluate initializer
@@ -349,3 +359,147 @@ class SemanticAnalyzer:
             return 'bool'
         self.errors.append(f"Unknown prefix operator {node.operator}")
         return None
+
+    # --- array & struct handlers ---
+    def _visit_structdefinition(self, node: A.StructDefinition) -> None:
+        """Register a struct type definition in the type system."""
+        if node.name is None:
+            self.errors.append("Struct definition without a name")
+            return
+        struct_name = node.name.value
+        fields: Dict[str, str] = {}
+        for f in node.fields:
+            if f.value_type is None:
+                self.errors.append(f"Field '{f.name}' in struct '{struct_name}' missing type")
+                return
+            resolved = self.types.resolve_alias(f.value_type)
+            if not self.types.exists(resolved):
+                self.errors.append(f"Unknown type '{f.value_type}' for field '{f.name}' in struct '{struct_name}'")
+                return
+            fields[f.name] = resolved
+        try:
+            self.types.create_struct_type(struct_name, fields)
+        except ValueError as e:
+            self.errors.append(str(e))
+
+    def _visit_arrayliteral(self, node: A.ArrayLiteral) -> Optional[str]:
+        """Infer type of array literal [e1, e2, ...] — all elements must have same type."""
+        if not node.elements:
+            self.errors.append("Empty array literals are not supported")
+            return None
+        elem_types = []
+        for elem in node.elements:
+            t = self._visit_expression(elem)
+            if t is None:
+                return None
+            elem_types.append(t)
+        # all must be same type
+        first = elem_types[0]
+        for i, t in enumerate(elem_types[1:], 1):
+            if t != first:
+                self.errors.append(f"Array element type mismatch: element 0 is {first}, element {i} is {t}")
+                return None
+        arr_type = f"[{len(node.elements)}]{first}"
+        setattr(node, "inferred_type", arr_type)
+        return arr_type
+
+    def _visit_structliteral(self, node: A.StructLiteral) -> Optional[str]:
+        """Type-check struct instantiation: StructName { field: val, ... }."""
+        struct_name = node.struct_name
+        if not self.types.is_struct_type(struct_name):
+            self.errors.append(f"Unknown struct type '{struct_name}'")
+            return None
+        expected_fields = self.types.get_struct_fields(struct_name)
+        if expected_fields is None:
+            return None
+        provided_names = set()
+        for fname, fval in node.field_values:
+            if fname in provided_names:
+                self.errors.append(f"Duplicate field '{fname}' in struct literal '{struct_name}'")
+                return None
+            provided_names.add(fname)
+            expected_info = expected_fields.get(fname)
+            if expected_info is None:
+                self.errors.append(f"Unknown field '{fname}' in struct '{struct_name}'")
+                return None
+            val_type = self._visit_expression(fval)
+            if val_type is None:
+                return None
+            if not self.types.can_assign(expected_info.name, val_type):
+                self.errors.append(f"Type mismatch for field '{fname}' in struct '{struct_name}': expected {expected_info.name}, got {val_type}")
+                return None
+        # check all fields are provided
+        for expected_name in expected_fields:
+            if expected_name not in provided_names:
+                self.errors.append(f"Missing field '{expected_name}' in struct literal '{struct_name}'")
+                return None
+        setattr(node, "inferred_type", struct_name)
+        return struct_name
+
+    def _visit_indexexpression(self, node: A.IndexExpression) -> Optional[str]:
+        """Type-check array indexing: arr[idx]."""
+        left_type = self._visit_expression(node.left) if node.left else None
+        if left_type is None:
+            return None
+        if not self.types.is_array_type(left_type):
+            self.errors.append(f"Cannot index into non-array type '{left_type}'")
+            return None
+        idx_type = self._visit_expression(node.index) if node.index else None
+        if idx_type is None:
+            return None
+        if not self.types.is_int(idx_type):
+            self.errors.append(f"Array index must be integer, got '{idx_type}'")
+            return None
+        elem_type = self.types.array_element_type(left_type)
+        setattr(node, "inferred_type", elem_type)
+        return elem_type
+
+    def _visit_fieldaccessexpression(self, node: A.FieldAccessExpression) -> Optional[str]:
+        """Type-check struct field access: obj.field."""
+        obj_type = self._visit_expression(node.object) if node.object else None
+        if obj_type is None:
+            return None
+        if not self.types.is_struct_type(obj_type):
+            self.errors.append(f"Cannot access field on non-struct type '{obj_type}'")
+            return None
+        field_type = self.types.get_struct_field_type(obj_type, node.field_name)
+        if field_type is None:
+            self.errors.append(f"Struct '{obj_type}' has no field '{node.field_name}'")
+            return None
+        setattr(node, "inferred_type", field_type)
+        return field_type
+
+    def _visit_indexassignstatement(self, node: A.IndexAssignStatement) -> None:
+        """Type-check array element assignment: arr[idx] = val;"""
+        arr_type = self._visit_expression(node.array) if node.array else None
+        if arr_type is None:
+            return
+        if not self.types.is_array_type(arr_type):
+            self.errors.append(f"Cannot index-assign into non-array type '{arr_type}'")
+            return
+        idx_type = self._visit_expression(node.index) if node.index else None
+        if idx_type is not None and not self.types.is_int(idx_type):
+            self.errors.append(f"Array index must be integer, got '{idx_type}'")
+            return
+        elem_type = self.types.array_element_type(arr_type)
+        val_type = self._visit_expression(node.value) if node.value else None
+        if val_type is not None and elem_type is not None:
+            if not self.types.can_assign(elem_type, val_type):
+                self.errors.append(f"Cannot assign {val_type} to array element of type {elem_type}")
+
+    def _visit_fieldassignstatement(self, node: A.FieldAssignStatement) -> None:
+        """Type-check struct field assignment: obj.field = val;"""
+        obj_type = self._visit_expression(node.object) if node.object else None
+        if obj_type is None:
+            return
+        if not self.types.is_struct_type(obj_type):
+            self.errors.append(f"Cannot assign field on non-struct type '{obj_type}'")
+            return
+        field_type = self.types.get_struct_field_type(obj_type, node.field_name)
+        if field_type is None:
+            self.errors.append(f"Struct '{obj_type}' has no field '{node.field_name}'")
+            return
+        val_type = self._visit_expression(node.value) if node.value else None
+        if val_type is not None:
+            if not self.types.can_assign(field_type, val_type):
+                self.errors.append(f"Cannot assign {val_type} to field '{node.field_name}' of type {field_type}")

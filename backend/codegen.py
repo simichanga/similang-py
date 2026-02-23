@@ -374,6 +374,71 @@ class Codegen:
             return
         self.builder.branch(self._continue_stack[-1])
 
+    def visit_structdefinition(self, node: A.StructDefinition) -> None:
+        """Register a struct type in the type system (no IR emitted at definition time)."""
+        struct_name = node.name.value
+        fields = {}
+        for f in node.fields:
+            fields[f.name] = self.types.resolve_alias(f.value_type)
+        if not self.types.is_struct_type(struct_name):
+            try:
+                self.types.create_struct_type(struct_name, fields)
+            except ValueError as e:
+                self.errors.append(str(e))
+
+    def visit_indexassignstatement(self, node: A.IndexAssignStatement) -> None:
+        """Assign to an array element: arr[idx] = val;"""
+        if self.builder is None:
+            self.errors.append("Index assignment outside of function")
+            return
+        # Get array pointer
+        if not isinstance(node.array, A.IdentifierLiteral):
+            self.errors.append("Index assignment target must be an identifier")
+            return
+        arr_name = node.array.value
+        try:
+            arr_ptr, arr_type = self.env.lookup(arr_name)
+        except VariableNotFoundError:
+            self.errors.append(f"Undeclared variable '{arr_name}'")
+            return
+        idx_val, _ = self._lower_expression(node.index)
+        val, val_type = self._lower_expression(node.value)
+        # GEP into the array
+        zero = ir.Constant(ir.IntType(32), 0)
+        elem_ptr = self.builder.gep(arr_ptr, [zero, idx_val], inbounds=True)
+        # Coerce value type if needed
+        elem_type = self.types.array_element_type(arr_type)
+        if elem_type and val_type != elem_type:
+            val = self._coerce_value_to_type(val, val_type, elem_type)
+        self.builder.store(val, elem_ptr)
+
+    def visit_fieldassignstatement(self, node: A.FieldAssignStatement) -> None:
+        """Assign to a struct field: obj.field = val;"""
+        if self.builder is None:
+            self.errors.append("Field assignment outside of function")
+            return
+        if not isinstance(node.object, A.IdentifierLiteral):
+            self.errors.append("Field assignment target must be an identifier")
+            return
+        obj_name = node.object.value
+        try:
+            obj_ptr, obj_type = self.env.lookup(obj_name)
+        except VariableNotFoundError:
+            self.errors.append(f"Undeclared variable '{obj_name}'")
+            return
+        field_idx = self.types.get_struct_field_index(obj_type, node.field_name)
+        if field_idx is None:
+            self.errors.append(f"Struct '{obj_type}' has no field '{node.field_name}'")
+            return
+        val, val_type = self._lower_expression(node.value)
+        zero = ir.Constant(ir.IntType(32), 0)
+        idx = ir.Constant(ir.IntType(32), field_idx)
+        field_ptr = self.builder.gep(obj_ptr, [zero, idx], inbounds=True)
+        field_type = self.types.get_struct_field_type(obj_type, node.field_name)
+        if field_type and val_type != field_type:
+            val = self._coerce_value_to_type(val, val_type, field_type)
+        self.builder.store(val, field_ptr)
+
     # ---- helpers ----
     def _lower_expression(self, node: A.Expression) -> Tuple[ir.Value, str]:
         """

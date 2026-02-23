@@ -1,0 +1,47 @@
+// Arrays and structs demo
+
+struct Point {
+    x: int,
+    y: int,
+}
+
+fn manhattan_distance(ax: int, ay: int, bx: int, by: int) -> int {
+    let dx: int = ax - bx;
+    let dy: int = ay - by;
+    if (dx < 0) {
+        dx = 0 - dx;
+    }
+    if (dy < 0) {
+        dy = 0 - dy;
+    }
+    return dx + dy;
+}
+
+fn main() -> int {
+    let origin: Point = Point { x: 0, y: 0 };
+    let dest: Point = Point { x: 3, y: 4 };
+
+    printf("Origin: (%d, %d)\n", origin.x, origin.y);
+    printf("Dest:   (%d, %d)\n", dest.x, dest.y);
+
+    dest.x = 6;
+    printf("Dest after mutation: (%d, %d)\n", dest.x, dest.y);
+
+    let dist: int = manhattan_distance(origin.x, origin.y, dest.x, dest.y);
+    printf("Manhattan distance: %d\n", dist);
+
+    let nums: [5]int = [10, 20, 30, 40, 50];
+    printf("nums[0] = %d\n", nums[0]);
+    printf("nums[4] = %d\n", nums[4]);
+
+    nums[2] = 99;
+    printf("nums[2] after mutation = %d\n", nums[2]);
+
+    let total: int = 0;
+    for (let i: int = 0; i < 5; i++) {
+        total += nums[i];
+    }
+    printf("Sum of nums: %d\n", total);
+
+    return 0;
+}
