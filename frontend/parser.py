@@ -5,6 +5,7 @@ from enum import IntEnum, auto
 from frontend.lexer import Lexer
 from frontend.token import TokenType, Token
 from frontend import ast as A
+from frontend.ast import SourceLocation
 from util.errors import ErrorCollector
 from util.diagnostics import DiagnosticEngine
 
@@ -91,6 +92,19 @@ class Parser:
         """Backward-compatible access to collected error messages."""
         return [e.format() for e in self.error_collector.errors]
 
+    # ---- location helpers ----
+    def _loc(self, token: Token | None = None) -> SourceLocation:
+        """Build a SourceLocation from a token (defaults to current_token)."""
+        tok = token or self.current_token
+        if tok is None:
+            return SourceLocation()
+        return SourceLocation(line=tok.line_no, col=tok.col)
+
+    def _tag(self, node: A.Node, token: Token | None = None) -> A.Node:
+        """Attach source location to *node* and return it for chaining."""
+        node.loc = self._loc(token)
+        return node
+
     # ---- token helpers ----
     def _next_token(self) -> None:
         self.current_token = self.peek_token
@@ -165,15 +179,20 @@ class Parser:
                 return self._parse_expression_statement()
 
     def _parse_expression_statement(self) -> Optional[A.ExpressionStatement]:
+        start = self.current_token
         expr = self._parse_expression(Precedence.LOWEST)
         if expr is None:
             return None
         if self._peek_is(TokenType.SEMICOLON):
             self._next_token()
-        return A.ExpressionStatement(expr=expr)
+        node = A.ExpressionStatement(expr=expr)
+        self._tag(node, start)
+        return node
 
     def _parse_assignment_statement(self) -> A.AssignStatement:
+        start = self.current_token
         ident = A.IdentifierLiteral(value=self.current_token.literal)
+        self._tag(ident)
         self._next_token()  # move to assignment operator
         if self.current_token.type not in {TokenType.EQ, TokenType.PLUS_EQ, TokenType.MINUS_EQ, TokenType.MUL_EQ, TokenType.DIV_EQ}:
             self.error_collector.add_error(f"Invalid assignment operator {self.current_token.literal}", line=self.current_token.line_no)
@@ -182,14 +201,19 @@ class Parser:
         rhs = self._parse_expression(Precedence.LOWEST)
         if not self._expect_peek(TokenType.SEMICOLON):
             self._peek_error(TokenType.SEMICOLON)
-        return A.AssignStatement(ident=ident, operator=operator, right_value=rhs)
+        node = A.AssignStatement(ident=ident, operator=operator, right_value=rhs)
+        self._tag(node, start)
+        return node
 
     def _parse_let_statement(self) -> Optional[A.LetStatement]:
+        start = self.current_token
         stmt = A.LetStatement()
+        self._tag(stmt, start)
         if not self._expect_peek(TokenType.IDENT):
             self._peek_error(TokenType.IDENT)
             return None
         stmt.name = A.IdentifierLiteral(value=self.current_token.literal)
+        self._tag(stmt.name)
 
         if not self._expect_peek(TokenType.COLON):
             self._peek_error(TokenType.COLON)
@@ -212,10 +236,13 @@ class Parser:
         return stmt
 
     def _parse_function_statement(self) -> Optional[A.FunctionStatement]:
+        start = self.current_token
         stmt = A.FunctionStatement()
+        self._tag(stmt, start)
         if not self._expect_peek(TokenType.IDENT):
             return None
         stmt.name = A.IdentifierLiteral(value=self.current_token.literal)
+        self._tag(stmt.name)
 
         if not self._expect_peek(TokenType.LPAREN):
             return None
@@ -242,6 +269,7 @@ class Parser:
         if not self.current_token.literal:
             return params
         first = A.FunctionParameter(name=self.current_token.literal)
+        self._tag(first)
         if not self._expect_peek(TokenType.COLON):
             return params
         self._next_token()
@@ -252,6 +280,7 @@ class Parser:
             self._next_token()
             self._next_token()
             param = A.FunctionParameter(name=self.current_token.literal)
+            self._tag(param)
             if not self._expect_peek(TokenType.COLON):
                 return params
             self._next_token()
@@ -263,14 +292,18 @@ class Parser:
         return params
 
     def _parse_return_statement(self) -> Optional[A.ReturnStatement]:
+        start = self.current_token
         self._next_token()
         retval = self._parse_expression(Precedence.LOWEST)
         if not self._expect_peek(TokenType.SEMICOLON):
             self._peek_error(TokenType.SEMICOLON)
-        return A.ReturnStatement(return_value=retval)
+        node = A.ReturnStatement(return_value=retval)
+        self._tag(node, start)
+        return node
 
     def _parse_block_statement(self) -> A.BlockStatement:
         block = A.BlockStatement()
+        self._tag(block)
         self._next_token()
         while not self._current_is(TokenType.RBRACE) and not self._current_is(TokenType.EOF):
             stmt = self._parse_statement()
@@ -282,6 +315,7 @@ class Parser:
     def _parse_if_statement(self) -> Optional[A.IfStatement]:
         # We're already on the IF token, parse the condition
         # Expect: if (condition) { consequence } [else { alternative }]
+        start_tok = self.current_token
         if not self._expect_peek(TokenType.LPAREN):
             self._peek_error(TokenType.LPAREN)
             return None
@@ -307,22 +341,28 @@ class Parser:
                 return None
             alternative = self._parse_block_statement()
 
-        return A.IfStatement(
+        node = A.IfStatement(
             condition=condition,
             consequence=consequence,
             alternative=alternative
         )
+        self._tag(node, start_tok)
+        return node
 
     def _parse_while_statement(self) -> Optional[A.WhileStatement]:
+        start = self.current_token
         self._next_token()
         cond = self._parse_expression(Precedence.LOWEST)
         if not self._expect_peek(TokenType.LBRACE):
             return None
         body = self._parse_block_statement()
-        return A.WhileStatement(condition=cond, body=body)
+        node = A.WhileStatement(condition=cond, body=body)
+        self._tag(node, start)
+        return node
 
     def _parse_for_statement(self) -> Optional[A.ForStatement]:
         # expects ( let ... ; <cond> ; <action> ) { ... }
+        start = self.current_token
         if not self._expect_peek(TokenType.LPAREN):
             return None
         if not self._expect_peek(TokenType.LET):
@@ -346,15 +386,23 @@ class Parser:
         if not self._expect_peek(TokenType.LBRACE):
             return None
         body = self._parse_block_statement()
-        return A.ForStatement(var_declaration=var_decl, condition=cond, action=action, body=body)
+        node = A.ForStatement(var_declaration=var_decl, condition=cond, action=action, body=body)
+        self._tag(node, start)
+        return node
 
     def _parse_break_statement(self) -> A.BreakStatement:
+        start = self.current_token
         self._next_token()
-        return A.BreakStatement()
+        node = A.BreakStatement()
+        self._tag(node, start)
+        return node
 
     def _parse_continue_statement(self) -> A.ContinueStatement:
+        start = self.current_token
         self._next_token()
-        return A.ContinueStatement()
+        node = A.ContinueStatement()
+        self._tag(node, start)
+        return node
 
     # ---- expressions (Pratt) ----
     def _parse_expression(self, prec: Precedence) -> Optional[A.Expression]:
@@ -380,6 +428,7 @@ class Parser:
 
     def _parse_infix_expression(self, left: A.Expression) -> A.InfixExpression:
         node = A.InfixExpression(left_node=left, operator=self.current_token.literal)
+        self._tag(node)
         precedence = self._current_precedence()
         self._next_token()
         node.right_node = self._parse_expression(precedence)
@@ -394,6 +443,7 @@ class Parser:
 
     def _parse_call_expression(self, function: A.Expression) -> A.CallExpression:
         node = A.CallExpression(function=function)
+        self._tag(node)  # tag at the '(' token
         node.arguments = self._parse_expression_list(TokenType.RPAREN)
         return node
 
@@ -418,18 +468,22 @@ class Parser:
 
     def _parse_prefix_expression(self) -> A.PrefixExpression:
         node = A.PrefixExpression(operator=self.current_token.literal)
+        self._tag(node)
         self._next_token()
         node.right_node = self._parse_expression(Precedence.PREFIX)
         return node
 
     def _parse_postfix_expression(self, left: A.Expression) -> A.PostfixExpression:
         operator = self.current_token.literal
-        return A.PostfixExpression(left_node=left, operator=operator)
+        node = A.PostfixExpression(left_node=left, operator=operator)
+        self._tag(node)
+        return node
 
     def _parse_assignment_expression(self, left: A.Expression) -> A.InfixExpression:
         # create an infix node representing assignment-like operators
         op = self.current_token.literal
         node = A.InfixExpression(left_node=left, operator=op)
+        self._tag(node)
         self._next_token()
         node.right_node = self._parse_expression(Precedence.LOWEST)
         return node
@@ -443,6 +497,7 @@ class Parser:
             self.error_collector.add_error(f"Could not parse literal {self.current_token.literal} as {cls.__name__}",
                                               line=self.current_token.line_no if self.current_token else None)
             return None
+        self._tag(inst)
         return inst
 
     def _parse_int_literal(self) -> Optional[A.IntegerLiteral]:
@@ -455,9 +510,13 @@ class Parser:
         return self._parse_literal(A.StringLiteral, lambda x: str(x))
 
     def _parse_identifier(self) -> A.IdentifierLiteral:
-        return A.IdentifierLiteral(value=self.current_token.literal)
+        node = A.IdentifierLiteral(value=self.current_token.literal)
+        self._tag(node)
+        return node
 
     def _parse_boolean(self) -> A.BooleanLiteral:
         # FIXED: produce real Python bool values
         val = self.current_token.type == TokenType.TRUE
-        return A.BooleanLiteral(value=val)
+        node = A.BooleanLiteral(value=val)
+        self._tag(node)
+        return node

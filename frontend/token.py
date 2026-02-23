@@ -75,6 +75,7 @@ class Token:
     literal: Union[str, int, float]
     line_no: int
     position: int
+    col: int = 0
 
     def __str__(self) -> str:
         return f"Token[{self.type} : {self.literal!r} : Line {self.line_no} : Pos {self.position}]"

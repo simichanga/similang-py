@@ -30,6 +30,7 @@ from util.config import Config
 from util.executor import execute_module
 from util.debug import dump_ast, dump_tokens, dump_ir
 from util.diagnostics import DiagnosticEngine
+from util.source_map import SourceMap
 
 logging.basicConfig(level=logging.DEBUG if Config.DEBUG else logging.INFO)
 logger = logging.getLogger("similang")
@@ -46,6 +47,9 @@ def parse_args():
                    help="Size optimization level (0=none, 1=size, 2=min-size). Default: 0")
     p.add_argument("--no-ast-opt", action="store_true", help="Disable AST-level optimizations")
     p.add_argument("--no-llvm-opt", action="store_true", help="Disable LLVM IR-level optimizations")
+    p.add_argument("--source-map", action="store_true", help="Generate a source map (.simi.map.json)")
+    p.add_argument("--show-source-map", action="store_true",
+                   help="Print the source map table to stdout")
     return p.parse_args()
 
 def load_source(path: str) -> str:
@@ -104,8 +108,13 @@ def main():
         if Config.OPT_DEBUG or Config.DEBUG:
             logger.info("AST optimizations: %s", opt_stats)
 
+    # Source map (created before codegen so codegen can record anchors)
+    smap = None
+    if args.source_map or args.show_source_map:
+        smap = SourceMap(filename=args.file, source_text=src)
+
     # Codegen
-    codegen = Codegen()
+    codegen = Codegen(source_map=smap)
     module = codegen.compile(program)
     if Config.CODEGEN_DEBUG or Config.DEBUG:
         dump_ir(module)
@@ -115,6 +124,18 @@ def main():
             diag.error(e)
         diag.summary()
         sys.exit(1)
+
+    # Write / display source map
+    if smap:
+        if args.source_map:
+            map_path = Path(args.file).with_suffix(".simi.map.json")
+            smap.write_json(map_path)
+            logger.info("Source map written to %s (%d mappings, %.0f%% coverage)",
+                        map_path, len(smap), smap.coverage * 100)
+        if args.show_source_map:
+            print()
+            print(smap.format_table())
+            print()
 
     if Config.RUN_CODE and not args.no_run:
         try:

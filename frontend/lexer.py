@@ -12,6 +12,10 @@ class Lexer:
         self.current_char: Optional[str] = None
         self.line_no: int = 1
         self.col: int = 0
+        # Token start snapshots (set at beginning of next_token)
+        self._tok_start_pos: int = 0
+        self._tok_start_col: int = 0
+        self._tok_start_line: int = 1
         self._read_char()
 
     # ---- low-level helpers ----
@@ -70,7 +74,8 @@ class Lexer:
                 self._read_char()
 
     def _new_token(self, tt: TokenType, literal: Any) -> Token:
-        return Token(type=tt, literal=literal, line_no=self.line_no, position=self.pos)
+        return Token(type=tt, literal=literal, line_no=self._tok_start_line,
+                     position=self._tok_start_pos, col=self._tok_start_col)
 
     # ---- higher-level scanners ----
     def _read_number(self) -> Token:
@@ -137,12 +142,15 @@ class Lexer:
             self._skip_comment()
             # after skipping a comment, find next token
             self._skip_whitespace()
-            if self.current_char is None:
-                return self._new_token(TokenType.EOF, '')
-        pos_snapshot = self.pos
+
+        # capture token start position for source mapping
+        self._tok_start_pos = self.pos
+        self._tok_start_col = self.col
+        self._tok_start_line = self.line_no
 
         if self.current_char is None:
             return self._new_token(TokenType.EOF, '')
+        pos_snapshot = self.pos
 
         ch = self.current_char
 

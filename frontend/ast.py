@@ -37,11 +37,41 @@ class NodeType(Enum):
     FunctionParameter = 'FunctionParameter'
 
 
+# --- Source location ---
+@dataclass
+class SourceLocation:
+    """Position of a node in the original source text."""
+    line: int = 0         # 1-based line number
+    col: int = 0          # 0-based column (position in source)
+    end_line: int = 0     # 1-based end line (0 = unknown)
+    end_col: int = 0      # 0-based end column (0 = unknown)
+
+    def json(self) -> dict:
+        return {'line': self.line, 'col': self.col,
+                'end_line': self.end_line, 'end_col': self.end_col}
+
+    def __bool__(self) -> bool:
+        return self.line > 0
+
+    def __repr__(self) -> str:
+        return f"Loc({self.line}:{self.col})"
+
+
 # --- Node base ---
 @dataclass
 class Node:
     def type(self) -> NodeType:
         raise NotImplementedError
+
+    # Source location — set by the parser. Not a dataclass field so it
+    # doesn't interfere with subclass __init__ signatures or json().
+    @property
+    def loc(self) -> SourceLocation:
+        return getattr(self, '_loc', SourceLocation())
+
+    @loc.setter
+    def loc(self, value: SourceLocation) -> None:
+        object.__setattr__(self, '_loc', value)
 
     def json(self) -> dict:
         """Return a JSON-serializable dict of the node tree."""
@@ -57,6 +87,10 @@ class Node:
         result: dict = {'type': self.type().value}
         for f in self.__dataclass_fields__:
             result[f] = _serialize(getattr(self, f))
+        # Include source location if present
+        loc = self.loc
+        if loc:
+            result['loc'] = loc.json()
         return result
 
 

@@ -116,7 +116,7 @@
 - [ ] **Linter** — `similang lint`
 - [ ] **REPL** — Interactive mode
 - [ ] **Package manager** — `similang pkg`
-- [ ] **Source maps** — Map generated IR/assembly back to source for debugging
+- [x] **Source maps** — Map generated IR/assembly back to source for debugging
 - [ ] **DWARF debug info** — Emit debug metadata in the generated binary
 - [ ] **Editor plugins** — VS Code extension (syntax highlighting, snippets)
 
@@ -158,7 +158,7 @@ Source (.simi)
      ▼
 ┌──────────┐
 │ Codegen  │  backend/codegen.py + expr_lowerer.py — AST → LLVM IR
-└────┬─────┘
+└────┬─────┘                      ↘ source map anchors → util/source_map.py
      │ LLVM IR module
      ▼
 ┌──────────┐
@@ -179,5 +179,6 @@ Supporting modules:
 - `util/config.py` — Global configuration flags (debug, optimization levels)
 - `util/debug.py` — AST/IR/token dump utilities
 - `util/env.py` — Nested-scope symbol environment (used by codegen)
+- `util/source_map.py` — Source maps: bidirectional IR ↔ source line mapping + JSON serialization
 - `backend/llvm_init.py` — LLVM module setup (printf, booleans)
 - `runtime/builtins.py` — Future runtime helper registrations

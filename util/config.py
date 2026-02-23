@@ -15,6 +15,7 @@ class Config:
     AST_OPT: bool = True        # run AST-level optimizations (constant folding, DCE, etc.)
     LLVM_OPT: bool = True       # run LLVM-level optimization passes
     OPT_DEBUG: bool = False     # print optimizer diagnostics
+    SOURCEMAP: bool = False     # generate source map by default
 
     @classmethod
     def enable_all_debug(cls):

@@ -3,10 +3,12 @@ from typing import Optional, Tuple, List
 from llvmlite import ir
 
 from frontend import ast as A
+from frontend.ast import SourceLocation
 from middle.types import TypeSystem
 from backend.llvm_init import LLVMInitializer
 from backend.expr_lowerer import ExpressionLowerer
 from util.env import Environment, VariableNotFoundError
+from util.source_map import SourceMap
 
 
 class Codegen:
@@ -17,12 +19,15 @@ class Codegen:
     - self.types: TypeSystem instance (language-level)
     - self.env: Environment mapping names to (value, type_name) where value can be
                an alloca ptr for variables or an ir.Function for functions.
+    - self.source_map: SourceMap recording IR→source mappings.
     """
 
-    def __init__(self, module_name: str = "main"):
+    def __init__(self, module_name: str = "main",
+                 source_map: Optional[SourceMap] = None):
         self.module = ir.Module(module_name)
         self.types = TypeSystem()
         self.env = Environment()
+        self.source_map = source_map
         # builder is set when generating function bodies and reset after
         self.builder: Optional[ir.IRBuilder] = None
         # helper initializer declares printf and booleans
@@ -39,10 +44,47 @@ class Codegen:
         self._break_stack: List[ir.Block] = []
         self._continue_stack: List[ir.Block] = []
 
+    # ---- source map helpers ----
+    def _smap_anchor(self, loc: SourceLocation, context: str,
+                     anchor: str) -> None:
+        """Record a (anchor_text, source_loc, context) for source map."""
+        if self.source_map is not None and loc and loc.line > 0:
+            self._smap_anchors.append((anchor, loc, context))
+
     # ---- public API ----
     def compile(self, program: A.Program) -> ir.Module:
+        self._smap_anchors: List[Tuple[str, SourceLocation, str]] = []
         self.visit(program)
+        if self.source_map is not None:
+            self._finalize_source_map()
         return self.module
+
+    def _finalize_source_map(self) -> None:
+        """Resolve anchor strings to IR line numbers and record mappings."""
+        ir_text = str(self.module)
+        ir_lines = ir_text.splitlines()
+
+        # For each anchor, find the first IR line containing the anchor text.
+        # Use a cursor to avoid re-matching earlier lines for ordered anchors.
+        cursor = 0
+        for anchor, loc, context in self._smap_anchors:
+            if not anchor:
+                continue
+            found = False
+            for i in range(cursor, len(ir_lines)):
+                if anchor in ir_lines[i]:
+                    self.source_map.record(i + 1, loc, context)
+                    cursor = i + 1  # advance past this match
+                    found = True
+                    break
+            if not found:
+                # Retry from the beginning (handles out-of-order cases)
+                for i in range(len(ir_lines)):
+                    if anchor in ir_lines[i]:
+                        self.source_map.record(i + 1, loc, context)
+                        break
+
+        self.source_map.finalize(ir_text)
 
     def visit(self, node: A.Node):
         meth = getattr(self, f"visit_{node.type().name.lower()}", None)
@@ -66,6 +108,9 @@ class Codegen:
 
         fnty = ir.FunctionType(ret_type, param_types)
         func = ir.Function(self.module, fnty, name=fname)
+
+        # source map: function definition
+        self._smap_anchor(node.loc, f"fn {fname}", f'define {{0}} @"{fname}"'.format(ret_type))
 
         # store function in env BEFORE generating body (allows recursion)
         self.env.define(fname, func, node.return_type or 'void')
@@ -110,6 +155,9 @@ class Codegen:
         name = node.name.value
         type_name = node.value_type
         irt = self.types.get_ir_type(type_name)
+
+        # source map: variable declaration
+        self._smap_anchor(node.loc, f"let {name}: {type_name}", f'%"{name}"')
         # create alloca in current function scope (must have builder)
         if self.builder is None:
             # global variable (top-level let) — emit global init
@@ -127,7 +175,7 @@ class Codegen:
             self.env.define(name, gvar, type_name)
         else:
             # local variable
-            ptr = self.builder.alloca(irt)
+            ptr = self.builder.alloca(irt, name=name)
             val, val_t = self._lower_expression(node.value)
             # convert val to expected ir type if needed
             store_val = self._coerce_value_to_type(val, val_t, type_name)
@@ -137,7 +185,12 @@ class Codegen:
     def visit_expressionstatement(self, node: A.ExpressionStatement) -> None:
         """Visit expression statement - just evaluate the expression for side effects."""
         if node.expr is not None:
+            # source map: expression statement (e.g. printf call)
+            if isinstance(node.expr, A.CallExpression) and isinstance(node.expr.function, A.IdentifierLiteral):
+                call_name = node.expr.function.value
+                self._smap_anchor(node.loc, f"call {call_name}", f'@"{call_name}"')
             self._lower_expression(node.expr)
+
     def visit_blockstatement(self, node: A.BlockStatement) -> None:
         # new lexical scope: we rely on Environment to manage nested scopes (util/env.py)
         # simply visit all statements
@@ -148,6 +201,8 @@ class Codegen:
         if self.builder is None:
             self.errors.append("Return outside of function")
             return
+        # source map: return statement
+        self._smap_anchor(node.loc, "return", "ret ")
         if node.return_value is None:
             self.builder.ret_void()
             return
@@ -163,6 +218,8 @@ class Codegen:
 
     def visit_assignstatement(self, node: A.AssignStatement) -> None:
         name = node.ident.value
+        # source map: assignment
+        self._smap_anchor(node.loc, f"{name} {node.operator}", f'%"{name}"')
         try:
             ptr, type_name = self.env.lookup(name)
         except VariableNotFoundError:
@@ -205,6 +262,8 @@ class Codegen:
         self.builder.store(to_store, ptr)
 
     def visit_ifstatement(self, node: A.IfStatement) -> None:
+        # source map: if statement
+        self._smap_anchor(node.loc, "if", "if_then")
         cond_val, cond_type = self._lower_expression(node.condition)
         # expect cond_type == 'bool'
         # create blocks
@@ -238,6 +297,8 @@ class Codegen:
             self.builder.position_at_start(cont_bb)
 
     def visit_whilestatement(self, node: A.WhileStatement) -> None:
+        # source map: while loop
+        self._smap_anchor(node.loc, "while", "while_entry")
         # create blocks: entry, body, after
         entry = self.builder.append_basic_block("while_entry")
         body = self.builder.append_basic_block("while_body")
@@ -264,6 +325,8 @@ class Codegen:
         self.builder.position_at_start(after)
 
     def visit_forstatement(self, node: A.ForStatement) -> None:
+        # source map: for loop
+        self._smap_anchor(node.loc, "for", "for_entry")
         # scope: var declaration then loop
         # create blocks
         entry = self.builder.append_basic_block("for_entry")
