@@ -97,6 +97,10 @@ class SemanticAnalyzer:
             self.errors.append(f"Unknown type '{node.value_type}' for variable '{node.name.value}'")
             return
 
+        # Resolve alias to canonical type (e.g. i32 -> int)
+        canonical_type = self.types.resolve_alias(node.value_type)
+        node.value_type = canonical_type
+
         # evaluate initializer
         if node.value is None:
             self.errors.append(f"Variable '{node.name.value}' requires an initializer")
@@ -107,13 +111,13 @@ class SemanticAnalyzer:
             return
 
         # check assignment compatibility
-        if not self.types.can_assign(node.value_type, expr_type):
-            self.errors.append(f"Type error: cannot assign {expr_type} to {node.value_type} (variable '{node.name.value}')")
+        if not self.types.can_assign(canonical_type, expr_type):
+            self.errors.append(f"Type error: cannot assign {expr_type} to {canonical_type} (variable '{node.name.value}')")
             return
 
         # define variable in current scope
-        self._define(SymbolInfo(name=node.name.value, type_name=node.value_type))
-        setattr(node, "inferred_type", node.value_type)
+        self._define(SymbolInfo(name=node.name.value, type_name=canonical_type))
+        setattr(node, "inferred_type", canonical_type)
 
     def _visit_assignstatement(self, node: A.AssignStatement) -> None:
         if node.ident is None:
@@ -138,17 +142,19 @@ class SemanticAnalyzer:
         if node.name is None:
             self.errors.append("Function without a name")
             return
-        ret_type = node.return_type or 'void'
+        ret_type = self.types.resolve_alias(node.return_type or 'void')
+        node.return_type = ret_type
         if not self.types.exists(ret_type):
             self.errors.append(f"Function {node.name.value!r} has unknown return type '{ret_type}'")
             return
 
-        # parameter types
+        # parameter types — resolve aliases
         param_types: List[str] = []
         for p in node.parameters:
             if p.value_type is None:
                 self.errors.append(f"Parameter '{p.name}' in function '{node.name.value}' missing type")
                 return
+            p.value_type = self.types.resolve_alias(p.value_type)
             if not self.types.exists(p.value_type):
                 self.errors.append(f"Parameter '{p.name}' in function '{node.name.value}' has unknown type '{p.value_type}'")
                 return

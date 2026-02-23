@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from typing import List, Optional, Any, Union
 from enum import Enum
 
@@ -53,9 +53,11 @@ class Node:
             if isinstance(obj, Enum):
                 return obj.value
             return obj
-        # use asdict but convert Node children recursively
-        raw = asdict(self)
-        return {'type': self.type().value, **{k: _serialize(v) for k, v in raw.items()}}
+        # Walk own fields (do NOT use asdict — it recursively converts Nodes to dicts)
+        result: dict = {'type': self.type().value}
+        for f in self.__dataclass_fields__:
+            result[f] = _serialize(getattr(self, f))
+        return result
 
 
 # --- Program ---

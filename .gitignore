@@ -1,1 +1,36 @@
-.venv
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test artifacts
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Debug dumps (generated at runtime)
+debug/*.json
+debug/*.ll
+debug/*.gz
+debug/*.txt
+debug/*.meta.json
+
+# OS
+Thumbs.db
+.DS_Store

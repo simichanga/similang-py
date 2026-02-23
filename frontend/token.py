@@ -97,7 +97,19 @@ KEYWORDS: Dict[str, TokenType] = {
     'break': TokenType.BREAK,
 }
 
-TYPE_KEYWORDS: Set[str] = {'bool', 'int', 'float', 'str', 'void'}
+# Canonical type names and their aliases.
+# All of these are recognized as TYPE tokens by the lexer.
+TYPE_KEYWORDS: Set[str] = {
+    # Canonical names
+    'bool', 'int', 'float', 'str', 'void',
+    # Integer aliases
+    'i8', 'i16', 'i32', 'i64',
+    'u8', 'u16', 'u32', 'u64',
+    # Float aliases
+    'f32', 'f64',
+    # Other aliases
+    'string', 'char',
+}
 
 
 def lookup_ident(ident: str) -> TokenType:

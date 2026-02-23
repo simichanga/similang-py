@@ -1,25 +1,85 @@
-import types
+"""
+Shared pytest configuration and fixtures for Similang tests.
+"""
+from __future__ import annotations
+
+import io
 from pathlib import Path
+from dataclasses import dataclass, field
+from typing import Optional
+
 import pytest
 
-from util.debug import dump_ast, dump_ir, dump_tokens
 from util.config import Config
+from util.debug import dump_ast, dump_tokens
+from util.diagnostics import DiagnosticEngine
 
-# Optional: enable debug flags globally in tests by environment,
-# or leave it controlled per-test via fixture.
-Config.DEBUG = True
 
+# ---------------------------------------------------------------------------
+# Global test config
+# ---------------------------------------------------------------------------
+Config.DEBUG = False          # keep tests quiet by default
+Config.PARSER_DEBUG = False
+Config.CODEGEN_DEBUG = False
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def diag():
+    """Provide a fresh DiagnosticEngine that writes to an in-memory buffer."""
+    buf = io.StringIO()
+    engine = DiagnosticEngine(source_text="", stream=buf, color=False)
+    engine._buf = buf          # expose for assertions
+    return engine
+
+
+@dataclass
+class DebugDumper:
+    """Collects AST / token dump requests; writes them only if the test fails."""
+    _asts: list = field(default_factory=list)
+    _token_lexers: list = field(default_factory=list)
+
+    def register_ast(self, program, *, name: str = "ast_dump") -> None:
+        self._asts.append((program, name))
+
+    def register_tokens(self, lexer, *, name: str = "token_dump") -> None:
+        self._token_lexers.append((lexer, name))
+
+    def flush(self) -> None:
+        old_debug = Config.DEBUG
+        Config.DEBUG = True
+        try:
+            for prog, name in self._asts:
+                dump_ast(prog, filename=name)
+            for lex, name in self._token_lexers:
+                dump_tokens(lex, filename=name)
+        finally:
+            Config.DEBUG = old_debug
+
+
+@pytest.fixture
+def debug_dumper(request):
+    """Fixture that dumps AST/tokens only when the test fails."""
+    dumper = DebugDumper()
+    yield dumper
+    # Teardown: dump if the test failed
+    rep = getattr(request.node, "rep_call", None)
+    if rep and rep.failed:
+        dumper.flush()
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
-    """
-    Standard helper hook that stores the test's report objects on the test item.
-    This lets fixtures see whether the test passed/failed in their teardown.
-    """
-    # This hook needs to yield to get the report in newer pytest versions,
-    # but the simple pattern below is often used. If using pytest >=7, the simpler
-    # not-yield form works as pytest will call it with the `call` argument.
-    # The following pattern is robust across pytest versions:
-    outcome = yield from getattr(pytest, "_pytest_internal", lambda *a, **k: None)() if False else None  # no-op for static analyzers
-    # The 'yield from' above is just an annotation-safe no-op; the actual hook body below:
-    # (Note: if you hit a "yield outside generator" error, use the simple non-generator form:
-    #     rep = item.config.hook.pytest_report_teststatus(item=item, call=call)
-    # but the implementation below uses the typical pattern.)
+    """Store test result on the item so fixtures can inspect it during teardown."""
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, f"rep_{rep.when}", rep)
+
+
+@pytest.fixture
+def fixtures_dir() -> Path:
+    """Return the path to the tests/fixtures/ directory."""
+    return Path(__file__).parent / "fixtures"
+

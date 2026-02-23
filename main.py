@@ -24,6 +24,7 @@ from backend.codegen import Codegen
 from util.config import Config
 from util.executor import execute_module
 from util.debug import dump_ast, dump_tokens, dump_ir
+from util.diagnostics import DiagnosticEngine
 
 logging.basicConfig(level=logging.DEBUG if Config.DEBUG else logging.INFO)
 logger = logging.getLogger("similang")
@@ -55,28 +56,26 @@ def main():
 
     src = load_source(args.file)
 
+    # Central diagnostics engine
+    diag = DiagnosticEngine(source_text=src, filename=args.file)
+
     # Lex + Parse
     lexer = Lexer(src)
-    parser = Parser(lexer)
+    parser = Parser(lexer, diag=diag)
     program = parser.parse_program()
     if Config.PARSER_DEBUG or Config.DEBUG:
         dump_ast(program)  # auto filename
     if parser.error_collector.has_errors():
-        logger.error("Parser warnings (%d):", len(parser.error_collector.warnings))
-        for warn in parser.error_collector.errors:
-            print(warn.format())
-        logger.error("Parser errors (%d):", len(parser.error_collector.errors))
-        for err in parser.error_collector.errors:
-            print(err.format())
+        diag.summary()
         sys.exit(1)
 
     # Semantic analysis
     sema = SemanticAnalyzer()
     ok, sem_errors = sema.analyze(program)
     if not ok:
-        logger.error("Semantic errors (%d):", len(sem_errors))
         for e in sem_errors:
-            logger.error("  %s", e)
+            diag.error(e)
+        diag.summary()
         sys.exit(1)
 
     # Codegen
@@ -84,6 +83,12 @@ def main():
     module = codegen.compile(program)
     if Config.CODEGEN_DEBUG or Config.DEBUG:
         dump_ir(module)
+
+    if codegen.errors:
+        for e in codegen.errors:
+            diag.error(e)
+        diag.summary()
+        sys.exit(1)
 
     if Config.RUN_CODE and not args.no_run:
         try:

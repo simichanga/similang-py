@@ -6,6 +6,7 @@ from frontend.lexer import Lexer
 from frontend.token import TokenType, Token
 from frontend import ast as A
 from util.errors import ErrorCollector
+from util.diagnostics import DiagnosticEngine
 
 
 class Precedence(IntEnum):
@@ -49,9 +50,9 @@ class Parser:
     Collects errors in self.errors (does not raise).
     """
 
-    def __init__(self, lexer: Lexer) -> None:
+    def __init__(self, lexer: Lexer, *, diag: Optional[DiagnosticEngine] = None) -> None:
         self.lexer = lexer
-        self.error_collector = ErrorCollector()
+        self.error_collector = ErrorCollector(diag=diag)
         self.current_token: Optional[Token] = None
         self.peek_token: Optional[Token] = None
 
@@ -84,6 +85,11 @@ class Parser:
         # prime tokens
         self._next_token()
         self._next_token()
+
+    @property
+    def errors(self) -> list:
+        """Backward-compatible access to collected error messages."""
+        return [e.format() for e in self.error_collector.errors]
 
     # ---- token helpers ----
     def _next_token(self) -> None:
@@ -170,7 +176,7 @@ class Parser:
         ident = A.IdentifierLiteral(value=self.current_token.literal)
         self._next_token()  # move to assignment operator
         if self.current_token.type not in {TokenType.EQ, TokenType.PLUS_EQ, TokenType.MINUS_EQ, TokenType.MUL_EQ, TokenType.DIV_EQ}:
-            self.errors.append(f"Invalid assignment operator {self.current_token.literal} at line {self.current_token.line_no}")
+            self.error_collector.add_error(f"Invalid assignment operator {self.current_token.literal}", line=self.current_token.line_no)
         operator = self.current_token.literal
         self._next_token()  # move to rhs
         rhs = self._parse_expression(Precedence.LOWEST)
@@ -354,7 +360,8 @@ class Parser:
     def _parse_expression(self, prec: Precedence) -> Optional[A.Expression]:
         prefix = self.prefix_parse_fns.get(self.current_token.type)
         if prefix is None:
-            self.errors.append(f"No prefix parse function for {self.current_token}")
+            self.error_collector.add_error(f"No prefix parse function for {self.current_token}",
+                                              line=self.current_token.line_no if self.current_token else None)
             return None
 
         left = prefix()
@@ -433,7 +440,8 @@ class Parser:
         try:
             inst.value = converter(self.current_token.literal)
         except Exception:
-            self.errors.append(f"Could not parse literal {self.current_token.literal} as {cls.__name__}")
+            self.error_collector.add_error(f"Could not parse literal {self.current_token.literal} as {cls.__name__}",
+                                              line=self.current_token.line_no if self.current_token else None)
             return None
         return inst
 

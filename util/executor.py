@@ -10,7 +10,7 @@ def execute_module(module) -> int:
     Execute the LLVM module using MCJIT and return the integer return code from `main`.
     Expects `module` to be an llvmlite.ir.Module (or convertible to str()) and contain `main`.
     """
-    llvm.initialize()
+    # llvm.initialize()
     llvm.initialize_native_target()
     llvm.initialize_native_asmprinter()
 

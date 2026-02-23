@@ -26,18 +26,32 @@ class TypeSystem:
     def __init__(self) -> None:
         # Initialize primitive types with rich metadata
         self.types: Dict[str, TypeInfo] = {
-            'int': TypeInfo('int', ir.IntType(32), 4, is_numeric=True),
-            'float': TypeInfo('float', ir.FloatType(), 4, is_numeric=True),
-            'bool': TypeInfo('bool', ir.IntType(1), 1),
-            'str': TypeInfo('str', ir.PointerType(ir.IntType(8)), 8, is_primitive=False),
-            'void': TypeInfo('void', ir.VoidType(), 0),
+            'int':   TypeInfo('int',   ir.IntType(32),              4, is_numeric=True),
+            'float': TypeInfo('float', ir.FloatType(),              4, is_numeric=True),
+            'bool':  TypeInfo('bool',  ir.IntType(1),               1),
+            'str':   TypeInfo('str',   ir.PointerType(ir.IntType(8)), 8, is_primitive=False),
+            'void':  TypeInfo('void',  ir.VoidType(),               0),
         }
 
-        # Support for type aliases
+        # ---- Type aliases ----
+        # Maps user-facing alias -> canonical name.
+        # The canonical name MUST exist in self.types.
         self.aliases: Dict[str, str] = {
-            'i32': 'int',
-            'f32': 'float',
+            # Integer aliases
+            'i8':     'int',
+            'i16':    'int',
+            'i32':    'int',
+            'i64':    'int',
+            'u8':     'int',
+            'u16':    'int',
+            'u32':    'int',
+            'u64':    'int',
+            # Float aliases
+            'f32':    'float',
+            'f64':    'float',
+            # String / char aliases
             'string': 'str',
+            'char':   'int',   # char is backed by i32 (Unicode code-point)
         }
 
         # Cached array types
@@ -77,8 +91,14 @@ class TypeSystem:
             name = self.aliases[name]
         return self.types.get(name)
 
+    def resolve_alias(self, name: str) -> str:
+        """Resolve a type name through the alias table to its canonical form."""
+        return self.aliases.get(name, name)
+
     def exists(self, name: str) -> bool:
-        return name in self.types
+        """Return True if *name* (or its alias) refers to a known type."""
+        canonical = self.resolve_alias(name)
+        return canonical in self.types
 
     # --- accessors & helper ---
     def create_struct_type(self, name: str, fields: Dict[str, str]) -> TypeInfo:
@@ -127,38 +147,39 @@ class TypeSystem:
 
         return False
 
-    # --- predicates ---
+    # --- predicates (resolve aliases first) ---
     def is_int(self, name: str) -> bool:
-        return name == 'int'
+        return self.resolve_alias(name) == 'int'
 
     def is_float(self, name: str) -> bool:
-        return name == 'float'
+        return self.resolve_alias(name) == 'float'
 
     def is_bool(self, name: str) -> bool:
-        return name == 'bool'
+        return self.resolve_alias(name) == 'bool'
 
     def is_str(self, name: str) -> bool:
-        return name == 'str'
+        return self.resolve_alias(name) == 'str'
 
     def is_void(self, name: str) -> bool:
-        return name == 'void'
+        return self.resolve_alias(name) == 'void'
 
     def is_numeric(self, name: str) -> bool:
-        return name in ('int', 'float')
+        return self.resolve_alias(name) in ('int', 'float')
 
     # --- coercion & assignment rules (language-level type names) ---
     def can_assign(self, target: str, source: str) -> bool:
         """
         Returns True if a value of type `source` can be assigned to `target`
         (either exact type equality or allowed implicit coercion).
-        We allow implicit int -> float promotion. Assigning float -> int is allowed
-        but it's considered a narrowing conversion (sema may warn; here we accept).
+        Aliases are resolved before comparison.
         """
-        if target == source:
+        t = self.resolve_alias(target)
+        s = self.resolve_alias(source)
+        if t == s:
             return True
-        if self.is_float(target) and self.is_int(source):
+        if self.is_float(t) and self.is_int(s):
             return True  # widen int -> float
-        if self.is_int(target) and self.is_float(source):
+        if self.is_int(t) and self.is_float(s):
             return True  # narrowing allowed (backend will fptosi)
         # bool <-> numeric? not implicitly allowed
         return False
@@ -169,22 +190,23 @@ class TypeSystem:
         for expressions like left <op> right, or None if invalid.
         Comparison operators return 'bool'.
         Arithmetic: int/int -> int, float/float -> float, int/float -> float (widen).
+        Aliases are resolved before comparison.
         """
+        left = self.resolve_alias(left)
+        right = self.resolve_alias(right)
+
         # comparisons produce bool
         if operator in ('==', '!=', '<', '<=', '>', '>='):
-            # ensure operands are comparable
             if (self.is_numeric(left) and self.is_numeric(right)) or (left == right):
                 return 'bool'
             return None
 
         # arithmetic operators
         if operator in ('+', '-', '*', '/', '%', '^'):
-            # numeric arithmetic only
             if self.is_numeric(left) and self.is_numeric(right):
                 if left == 'float' or right == 'float':
                     return 'float'
                 return 'int'
-            # allow string concatenation with + (if both str)
             if operator == '+' and left == 'str' and right == 'str':
                 return 'str'
             return None
