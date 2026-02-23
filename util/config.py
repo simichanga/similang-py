@@ -9,6 +9,13 @@ class Config:
     SHOW_BENCHMARK = False
     SHOW_EXECUTION_OUTPUT = False
 
+    # Optimization settings
+    OPT_LEVEL: int = 0          # 0 = none, 1 = basic, 2 = standard, 3 = aggressive
+    SIZE_LEVEL: int = 0         # 0 = none, 1 = size, 2 = min-size
+    AST_OPT: bool = True        # run AST-level optimizations (constant folding, DCE, etc.)
+    LLVM_OPT: bool = True       # run LLVM-level optimization passes
+    OPT_DEBUG: bool = False     # print optimizer diagnostics
+
     @classmethod
     def enable_all_debug(cls):
         cls.DEBUG = True
@@ -18,6 +25,7 @@ class Config:
         cls.CODEGEN_DEBUG = True
         cls.SHOW_BENCHMARK = True
         cls.SHOW_EXECUTION_OUTPUT = True
+        cls.OPT_DEBUG = True
 
     @classmethod
     def disable_all_debug(cls):
@@ -28,6 +36,7 @@ class Config:
         cls.CODEGEN_DEBUG = False
         cls.SHOW_BENCHMARK = False
         cls.SHOW_EXECUTION_OUTPUT = False
+        cls.OPT_DEBUG = False
 
     @classmethod
     def enable_benchmark(cls):

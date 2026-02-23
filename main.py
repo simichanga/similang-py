@@ -2,12 +2,16 @@
 Top-level driver for Similang (refactored layout).
 Usage:
     python main.py path/to/file.simi [--no-run] [--debug] [--show-benchmark]
+                                      [--opt-level 0-3] [--size-level 0-2]
+                                      [--no-ast-opt] [--no-llvm-opt]
 
 This script:
  - reads the source file
  - lexes and parses into AST
  - runs semantic analysis
+ - runs AST-level optimizations (constant folding, DCE, constant propagation)
  - generates LLVM IR
+ - applies LLVM optimization passes
  - writes debug/ir.ll
  - optionally runs the compiled code using llvmlite (MCJIT)
 """
@@ -20,6 +24,7 @@ from pathlib import Path
 from frontend.lexer import Lexer
 from frontend.parser import Parser
 from middle.sema import SemanticAnalyzer
+from middle.optimizer import ASTOptimizer
 from backend.codegen import Codegen
 from util.config import Config
 from util.executor import execute_module
@@ -35,6 +40,12 @@ def parse_args():
     p.add_argument("--no-run", action="store_true", help="Do not execute the produced code")
     p.add_argument("--debug", action="store_true", help="Enable debug flags")
     p.add_argument("--show-benchmark", action="store_true", help="Show benchmark info")
+    p.add_argument("--opt-level", "-O", type=int, default=2, choices=[0, 1, 2, 3],
+                   help="Optimization level (0=none, 1=basic, 2=standard, 3=aggressive). Default: 2")
+    p.add_argument("--size-level", "-Os", type=int, default=0, choices=[0, 1, 2],
+                   help="Size optimization level (0=none, 1=size, 2=min-size). Default: 0")
+    p.add_argument("--no-ast-opt", action="store_true", help="Disable AST-level optimizations")
+    p.add_argument("--no-llvm-opt", action="store_true", help="Disable LLVM IR-level optimizations")
     return p.parse_args()
 
 def load_source(path: str) -> str:
@@ -53,6 +64,14 @@ def main():
         Config.enable_benchmark()
     if args.no_run:
         Config.RUN_CODE = False
+
+    # Optimization configuration
+    Config.OPT_LEVEL = args.opt_level
+    Config.SIZE_LEVEL = args.size_level
+    if args.no_ast_opt:
+        Config.AST_OPT = False
+    if args.no_llvm_opt:
+        Config.LLVM_OPT = False
 
     src = load_source(args.file)
 
@@ -77,6 +96,13 @@ def main():
             diag.error(e)
         diag.summary()
         sys.exit(1)
+
+    # AST-level optimization
+    if Config.AST_OPT and Config.OPT_LEVEL > 0:
+        optimizer = ASTOptimizer(opt_level=Config.OPT_LEVEL)
+        program, opt_stats = optimizer.optimize(program)
+        if Config.OPT_DEBUG or Config.DEBUG:
+            logger.info("AST optimizations: %s", opt_stats)
 
     # Codegen
     codegen = Codegen()

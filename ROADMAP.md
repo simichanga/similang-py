@@ -19,7 +19,9 @@
 | **Execution** | MCJIT-based execution of the compiled `main` function. |
 | **Diagnostics engine** | Coloured, source-aware error/warning/note output with caret highlighting. |
 | **Debug dumps** | AST JSON, IR `.ll`, token dumps to `debug/` directory. |
-| **Test suite** | 183 tests (lexer, parser, sema, codegen integration, diagnostics). |
+| **AST optimizer** | Constant folding, dead code elimination, constant propagation with fixed-point iteration (O0–O3). |
+| **LLVM optimization** | New pass manager integration with configurable speed/size levels, loop opts, vectorization. |
+| **Test suite** | 232 tests (lexer, parser, sema, codegen integration, diagnostics, optimizer). |
 
 ### Known Limitations / Bugs
 
@@ -45,7 +47,7 @@
 - [ ] Add source locations (line, col) to every AST node
 - [ ] Propagate source locations through sema and codegen errors
 - [ ] Fix parser to validate type tokens for function parameters
-- [ ] Add `.gitignore`
+- [x] Add `.gitignore`
 
 ### Phase 2 — Language Essentials
 
@@ -98,12 +100,13 @@
 
 ### Phase 7 — Optimisation
 
-- [ ] **Constant folding** (compile-time evaluation of `2 + 3` → `5`)
-- [ ] **Dead code elimination**
+- [x] **Constant folding** (compile-time evaluation of `2 + 3` → `5`)
+- [x] **Dead code elimination**
+- [x] **Constant propagation** (single-assignment variable substitution)
+- [x] **LLVM optimisation passes** — Hook into `-O0`, `-O1`, `-O2`, `-O3`
 - [ ] **Inlining hints** — `inline fn`
 - [ ] **Loop invariant code motion**
 - [ ] **Tail call optimisation**
-- [ ] **LLVM optimisation passes** — Hook into `-O1`, `-O2`, `-O3`
 - [ ] **Benchmark framework** — Track compilation speed and generated code quality
 
 ### Phase 8 — Tooling & DX
@@ -149,9 +152,19 @@ Source (.simi)
      │ validated AST
      ▼
 ┌──────────┐
+│Optimizer │  middle/optimizer.py — constant folding, DCE, propagation (O0–O3)
+└────┬─────┘
+     │ optimized AST
+     ▼
+┌──────────┐
 │ Codegen  │  backend/codegen.py + expr_lowerer.py — AST → LLVM IR
 └────┬─────┘
      │ LLVM IR module
+     ▼
+┌──────────┐
+│ LLVM Opt │  util/executor.py — new pass manager (speed/size levels)
+└────┬─────┘
+     │ optimized IR
      ▼
 ┌──────────┐
 │ Executor │  util/executor.py — MCJIT compilation + execution
@@ -160,9 +173,10 @@ Source (.simi)
 
 Supporting modules:
 - `middle/types.py` — Type system (type info, aliases, coercion rules)
+- `middle/optimizer.py` — AST optimization passes (constant folding, DCE, constant propagation)
 - `util/diagnostics.py` — Structured diagnostic output (errors, warnings, notes)
 - `util/errors.py` — Error collector (bridges old API to diagnostics engine)
-- `util/config.py` — Global configuration flags
+- `util/config.py` — Global configuration flags (debug, optimization levels)
 - `util/debug.py` — AST/IR/token dump utilities
 - `util/env.py` — Nested-scope symbol environment (used by codegen)
 - `backend/llvm_init.py` — LLVM module setup (printf, booleans)
