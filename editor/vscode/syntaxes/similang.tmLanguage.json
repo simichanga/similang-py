@@ -1,0 +1,210 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Similang",
+  "scopeName": "source.similang",
+  "fileTypes": ["simi"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#functions" },
+    { "include": "#variables" },
+    { "include": "#operators" },
+    { "include": "#punctuation" },
+    { "include": "#constants" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.similang",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.similang",
+          "begin": "/\\*",
+          "end": "\\*/",
+          "patterns": [
+            {
+              "name": "comment.block.similang",
+              "begin": "/\\*",
+              "end": "\\*/"
+            }
+          ]
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.similang",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.similang",
+              "match": "\\\\[nrt\\\\\"0]"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.similang",
+          "match": "\\b[0-9]+\\.[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.similang",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.similang",
+          "match": "\\b(if|else|while|for|return|break|continue)\\b"
+        },
+        {
+          "name": "keyword.declaration.function.similang",
+          "match": "\\b(fn)\\b"
+        },
+        {
+          "name": "keyword.declaration.variable.similang",
+          "match": "\\b(let)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "support.type.primitive.similang",
+          "match": "\\b(int|float|bool|str|void|string|char)\\b"
+        },
+        {
+          "name": "support.type.sized.similang",
+          "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64)\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "comment": "Function definition name",
+          "match": "\\b(fn)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "keyword.declaration.function.similang" },
+            "2": { "name": "entity.name.function.similang" }
+          }
+        },
+        {
+          "comment": "Function call",
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "entity.name.function.call.similang" }
+          }
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "comment": "Variable declaration name (after 'let')",
+          "match": "\\b(let)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*:",
+          "captures": {
+            "1": { "name": "keyword.declaration.variable.similang" },
+            "2": { "name": "variable.other.declaration.similang" }
+          }
+        },
+        {
+          "comment": "Function parameter name",
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*:\\s*(?:int|float|bool|str|void|string|char|i8|i16|i32|i64|u8|u16|u32|u64|f32|f64)",
+          "captures": {
+            "1": { "name": "variable.parameter.similang" }
+          }
+        },
+        {
+          "comment": "Generic identifier",
+          "name": "variable.other.similang",
+          "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.similang",
+          "match": "\\b(true|false)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arrow.similang",
+          "match": "->"
+        },
+        {
+          "name": "keyword.operator.comparison.similang",
+          "match": "==|!=|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.assignment.compound.similang",
+          "match": "\\+=|-=|\\*=|/="
+        },
+        {
+          "name": "keyword.operator.assignment.similang",
+          "match": "="
+        },
+        {
+          "name": "keyword.operator.increment.similang",
+          "match": "\\+\\+|--"
+        },
+        {
+          "name": "keyword.operator.arithmetic.similang",
+          "match": "\\+|-|\\*|/|%|\\^"
+        },
+        {
+          "name": "keyword.operator.logical.similang",
+          "match": "!"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.colon.similang",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.separator.comma.similang",
+          "match": ","
+        },
+        {
+          "name": "punctuation.terminator.semicolon.similang",
+          "match": ";"
+        },
+        {
+          "name": "punctuation.bracket.round.open.similang",
+          "match": "\\("
+        },
+        {
+          "name": "punctuation.bracket.round.close.similang",
+          "match": "\\)"
+        },
+        {
+          "name": "punctuation.bracket.curly.open.similang",
+          "match": "\\{"
+        },
+        {
+          "name": "punctuation.bracket.curly.close.similang",
+          "match": "\\}"
+        }
+      ]
+    }
+  }
+}

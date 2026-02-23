@@ -111,14 +111,14 @@
 
 ### Phase 8 — Tooling & DX
 
-- [ ] **Language Server Protocol (LSP)** — Autocomplete, go-to-definition, hover types
+- [x] **Language Server Protocol (LSP)** — Autocomplete, go-to-definition, hover types
 - [ ] **Formatter** — `similang fmt`
 - [ ] **Linter** — `similang lint`
 - [ ] **REPL** — Interactive mode
 - [ ] **Package manager** — `similang pkg`
 - [x] **Source maps** — Map generated IR/assembly back to source for debugging
 - [ ] **DWARF debug info** — Emit debug metadata in the generated binary
-- [ ] **Editor plugins** — VS Code extension (syntax highlighting, snippets)
+- [x] **Editor plugins** — VS Code extension (syntax highlighting, snippets, runner)
 
 ### Phase 9 — Targets & Distribution
 
@@ -182,3 +182,6 @@ Supporting modules:
 - `util/source_map.py` — Source maps: bidirectional IR ↔ source line mapping + JSON serialization
 - `backend/llvm_init.py` — LLVM module setup (printf, booleans)
 - `runtime/builtins.py` — Future runtime helper registrations
+- `lsp/server.py` — Language Server Protocol server (pygls, stdio/TCP)
+- `lsp/analysis.py` — LSP analysis: diagnostics, symbols, hover, go-to-def, completion
+- `editor/vscode/` — VS Code extension: TextMate grammar, snippets, LSP client, runner

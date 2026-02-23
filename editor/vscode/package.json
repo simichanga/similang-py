@@ -1,0 +1,140 @@
+{
+  "name": "similang",
+  "displayName": "Similang",
+  "description": "Language support for Similang — syntax highlighting, LSP diagnostics, hover, go-to-definition, completion, and runner.",
+  "version": "0.1.0",
+  "publisher": "similang",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onLanguage:similang"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "similang",
+        "aliases": [
+          "Similang",
+          "simi"
+        ],
+        "extensions": [
+          ".simi"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/similang-light.png",
+          "dark": "./icons/similang-dark.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "similang",
+        "scopeName": "source.similang",
+        "path": "./syntaxes/similang.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "similang.run",
+        "title": "Similang: Run Current File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "similang.runOptimized",
+        "title": "Similang: Run Current File (Optimized -O3)"
+      },
+      {
+        "command": "similang.showIR",
+        "title": "Similang: Show LLVM IR"
+      },
+      {
+        "command": "similang.restartServer",
+        "title": "Similang: Restart Language Server"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "similang.run",
+          "when": "resourceLangId == similang",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "similang.run",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "resourceLangId == similang"
+      }
+    ],
+    "configuration": {
+      "title": "Similang",
+      "properties": {
+        "similang.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to the Python interpreter used to run the Similang LSP server and compiler."
+        },
+        "similang.projectRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the similang-py project root. If empty, auto-detected from the extension."
+        },
+        "similang.optimizationLevel": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "maximum": 3,
+          "description": "Default optimization level (0–3) for the runner."
+        },
+        "similang.lsp.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Similang Language Server for diagnostics, hover, and completion."
+        },
+        "similang.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Trace communication between VS Code and the Similang language server."
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "similang",
+        "path": "./snippets/similang.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.75.0",
+    "@types/node": "^18.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}

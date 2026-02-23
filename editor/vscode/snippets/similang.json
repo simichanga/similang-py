@@ -1,0 +1,80 @@
+{
+  "Function": {
+    "prefix": "fn",
+    "body": [
+      "fn ${1:name}(${2:params}) -> ${3:int} {",
+      "  $0",
+      "}"
+    ],
+    "description": "Function declaration"
+  },
+  "Main Function": {
+    "prefix": "main",
+    "body": [
+      "fn main() -> int {",
+      "  $0",
+      "  return 0;",
+      "}"
+    ],
+    "description": "Main entry point"
+  },
+  "Let Variable": {
+    "prefix": "let",
+    "body": [
+      "let ${1:name}: ${2:int} = ${3:0};"
+    ],
+    "description": "Variable declaration"
+  },
+  "If Statement": {
+    "prefix": "if",
+    "body": [
+      "if (${1:condition}) {",
+      "  $0",
+      "}"
+    ],
+    "description": "If statement"
+  },
+  "If-Else Statement": {
+    "prefix": "ife",
+    "body": [
+      "if (${1:condition}) {",
+      "  $2",
+      "} else {",
+      "  $0",
+      "}"
+    ],
+    "description": "If-else statement"
+  },
+  "While Loop": {
+    "prefix": "while",
+    "body": [
+      "while ${1:condition} {",
+      "  $0",
+      "}"
+    ],
+    "description": "While loop"
+  },
+  "For Loop": {
+    "prefix": "for",
+    "body": [
+      "for (let ${1:i}: int = ${2:0}; ${1:i} < ${3:10}; ${1:i}++) {",
+      "  $0",
+      "}"
+    ],
+    "description": "For loop"
+  },
+  "Return": {
+    "prefix": "ret",
+    "body": [
+      "return ${1:value};"
+    ],
+    "description": "Return statement"
+  },
+  "Printf": {
+    "prefix": "printf",
+    "body": [
+      "printf(\"${1:%d}\\n\", ${2:value});"
+    ],
+    "description": "Printf call"
+  }
+}

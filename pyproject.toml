@@ -5,6 +5,7 @@ description = "Similang compiler (refactor)"
 
 [tool.poetry.dependencies]
 python = ">=3.12"
+pygls = "^2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.0"
