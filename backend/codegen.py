@@ -354,7 +354,10 @@ class Codegen:
         self.visit(node.body)
         # action expression (usually assignment)
         if node.action is not None:
-            self._lower_expression(node.action)
+            if isinstance(node.action, A.AssignStatement):
+                self.visit(node.action)
+            else:
+                self._lower_expression(node.action)
         if not self.builder.block.is_terminated:
             self.builder.branch(entry)
         self._break_stack.pop()

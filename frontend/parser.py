@@ -202,7 +202,7 @@ class Parser:
         self._tag(node, start)
         return node
 
-    def _parse_assignment_statement(self) -> A.AssignStatement:
+    def _parse_assignment_statement(self, expect_semi: bool = True) -> A.AssignStatement:
         start = self.current_token
         ident = A.IdentifierLiteral(value=self.current_token.literal)
         self._tag(ident)
@@ -212,8 +212,9 @@ class Parser:
         operator = self.current_token.literal
         self._next_token()  # move to rhs
         rhs = self._parse_expression(Precedence.LOWEST)
-        if not self._expect_peek(TokenType.SEMICOLON):
-            self._peek_error(TokenType.SEMICOLON)
+        if expect_semi:
+            if not self._expect_peek(TokenType.SEMICOLON):
+                self._peek_error(TokenType.SEMICOLON)
         node = A.AssignStatement(ident=ident, operator=operator, right_value=rhs)
         self._tag(node, start)
         return node
@@ -392,7 +393,15 @@ class Parser:
             return None
         if not self._peek_is(TokenType.RPAREN):
             self._next_token()
-            action = self._parse_expression(Precedence.LOWEST)
+            # Detect compound/simple assignment: ident (=|+=|-=|*=|/=) expr
+            if (self.current_token.type == TokenType.IDENT
+                    and self.peek_token
+                    and self.peek_token.type in {
+                        TokenType.EQ, TokenType.PLUS_EQ, TokenType.MINUS_EQ,
+                        TokenType.MUL_EQ, TokenType.DIV_EQ}):
+                action = self._parse_assignment_statement(expect_semi=False)
+            else:
+                action = self._parse_expression(Precedence.LOWEST)
         else:
             action = None
         if not self._expect_peek(TokenType.RPAREN):
